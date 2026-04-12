@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import { renderReportHtml } from './report'
+import { renderReportMarkdown } from './report'
 import type { FilesSnapshot } from './types'
 
 const snapshot: FilesSnapshot = {
@@ -22,13 +22,11 @@ const snapshot: FilesSnapshot = {
   ],
 }
 
-describe('renderReportHtml', () => {
+describe('renderReportMarkdown', () => {
   test('renders a simple file size report', () => {
-    const html = renderReportHtml(snapshot)
-    expect(html).toContain('<title>gh-build-size report</title>')
-    expect(html).toContain('<code>dist/index.mjs</code>')
-    expect(html).toContain('120 B')
-    expect(html).toContain('60 B')
-    expect(html).toContain('55 B')
+    const markdown = renderReportMarkdown(snapshot)
+    expect(markdown).toContain('# gh-build-size report')
+    expect(markdown).toContain('| `dist/index.mjs` | 120 B | 60 B | 55 B |')
+    expect(markdown).toContain('- Repository: **kitsuyui/gh-build-size**')
   })
 })

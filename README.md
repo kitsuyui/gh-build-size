@@ -1,6 +1,6 @@
 # gh-build-size
 
-[![Build Size Report](https://raw.githubusercontent.com/kitsuyui/gh-build-size/gh-build-size-assets/badges/total.svg)](https://github.com/kitsuyui/gh-build-size/blob/gh-build-size-assets/report.html)
+[![Build Size Report](https://raw.githubusercontent.com/kitsuyui/gh-build-size/gh-build-size-assets/badges/total.svg)](https://github.com/kitsuyui/gh-build-size/blob/gh-build-size-assets/report.md)
 
 `gh-build-size` is a GitHub Action for measuring built artifact sizes on pull
 requests and on the default branch. It is designed to work without SaaS: the
@@ -103,7 +103,7 @@ That configuration produces one target per workspace package such as
 - When the publish branch does not have a baseline yet, `gh-build-size` treats
   the target as an initial measurement and still comments on the pull request.
 - On pushes to the default branch, `gh-build-size` can publish `summary.json`,
-  `files.json`, `report.html`, per-target JSON files, and SVG badges to a
+  `files.json`, `report.md`, per-target JSON files, and SVG badges to a
   dedicated branch.
 - Measurements are aggregated per target across all matched files.
 - The durable record is file-level. PR comments and target summaries are just
@@ -116,15 +116,15 @@ branch:
 
 - `summary.json`
 - `files.json`
-- `report.html`
+- `report.md`
 - `badges/<target>.svg`
 - `targets/<target>.json`
 
 `summary.json` is a compact summary for comments and quick inspection.
 `files.json` and `targets/<target>.json` keep the original measured file names
 plus size data, so later tools can regroup files differently or generate richer
-HTML reports without rerunning old builds. `report.html` is the simplest built-in
-view over the latest file-level snapshot.
+reports without rerunning old builds. `report.md` is the simplest built-in
+view over the latest file-level snapshot on GitHub.
 
 ## Dogfooding
 

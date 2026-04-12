@@ -38503,7 +38503,7 @@ async function normalizeConfig(config, inputs, workspaceRoot = process.cwd()) {
 			directory: config.publish?.directory ?? ".",
 			summary_filename: config.publish?.summary_filename ?? "summary.json",
 			files_filename: config.publish?.files_filename ?? "files.json",
-			report_filename: config.publish?.report_filename ?? "report.html",
+			report_filename: config.publish?.report_filename ?? "report.md",
 			badges_directory: config.publish?.badges_directory ?? "badges",
 			targets_directory: config.publish?.targets_directory ?? "targets"
 		},
@@ -38762,7 +38762,7 @@ var entityMap = {
 	"`": "&#x60;",
 	"=": "&#x3D;"
 };
-function escapeHtml$1(string) {
+function escapeHtml(string) {
 	return String(string).replace(/[&<>"'`=\/]/g, function fromEntityMap(s) {
 		return entityMap[s];
 	});
@@ -39279,7 +39279,7 @@ mustache.render = function render(template, view, partials, config) {
 	if (typeof template !== "string") throw new TypeError("Invalid template! Template should be a \"string\" but \"" + typeStr(template) + "\" was given as the first argument for mustache#render(template, view, partials)");
 	return defaultWriter.render(template, view, partials, config);
 };
-mustache.escape = escapeHtml$1;
+mustache.escape = escapeHtml;
 mustache.Scanner = Scanner;
 mustache.Context = Context;
 mustache.Writer = Writer;
@@ -39339,99 +39339,20 @@ function decideCommentAction(existing, nextBody) {
 
 //#endregion
 //#region src/report.ts
-function escapeHtml(value) {
-	return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\"", "&quot;").replaceAll("'", "&#39;");
-}
 function formatBytes(value) {
 	return `${value.toLocaleString("en-US")} B`;
 }
-function renderReportHtml(snapshot) {
-	const rows = snapshot.files.map((file) => `
-        <tr>
-          <td><code>${escapeHtml(file.path)}</code></td>
-          <td>${formatBytes(file.sizes.raw)}</td>
-          <td>${formatBytes(file.sizes.gzip)}</td>
-          <td>${formatBytes(file.sizes.brotli)}</td>
-        </tr>`).join("\n");
-	return `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>gh-build-size report</title>
-    <style>
-      :root {
-        color-scheme: light;
-        font-family: ui-sans-serif, system-ui, sans-serif;
-      }
-      body {
-        margin: 0;
-        padding: 2rem;
-        background: #f7f7f5;
-        color: #1f2328;
-      }
-      main {
-        max-width: 72rem;
-        margin: 0 auto;
-      }
-      h1 {
-        margin: 0 0 0.5rem;
-        font-size: 2rem;
-      }
-      .meta {
-        margin-bottom: 1.5rem;
-        color: #57606a;
-      }
-      p {
-        margin: 0.25rem 0;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        background: #ffffff;
-      }
-      th, td {
-        padding: 0.75rem;
-        border-bottom: 1px solid #d1d9e0;
-        text-align: left;
-      }
-      th {
-        background: #f0f3f6;
-      }
-      td:nth-child(n + 2), th:nth-child(n + 2) {
-        text-align: right;
-        white-space: nowrap;
-      }
-      code {
-        font-family: ui-monospace, SFMono-Regular, monospace;
-        font-size: 0.9rem;
-      }
-    </style>
-  </head>
-  <body>
-    <main>
-      <h1>gh-build-size report</h1>
-      <div class="meta">
-        <p>Repository: <strong>${escapeHtml(snapshot.repository)}</strong></p>
-        <p>Head: <code>${escapeHtml(snapshot.head_reference)}</code></p>
-        <p>Generated at: ${escapeHtml(snapshot.generated_at)}</p>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>File</th>
-            <th>Raw</th>
-            <th>Gzip</th>
-            <th>Brotli</th>
-          </tr>
-        </thead>
-        <tbody>
+function renderReportMarkdown(snapshot) {
+	const rows = snapshot.files.map((file) => `| \`${file.path}\` | ${formatBytes(file.sizes.raw)} | ${formatBytes(file.sizes.gzip)} | ${formatBytes(file.sizes.brotli)} |`).join("\n");
+	return `# gh-build-size report
+
+- Repository: **${snapshot.repository}**
+- Head: \`${snapshot.head_reference}\`
+- Generated at: ${snapshot.generated_at}
+
+| File | Raw | Gzip | Brotli |
+| --- | ---: | ---: | ---: |
 ${rows}
-        </tbody>
-      </table>
-    </main>
-  </body>
-</html>
 `;
 }
 
@@ -39538,7 +39459,7 @@ async function publishAssets(octokit, summary, filesSnapshot, targetStatuses, sn
 				path: path.posix.join(config.publish.directory, config.publish.report_filename),
 				mode: "100644",
 				type: "blob",
-				content: renderReportHtml(filesSnapshot)
+				content: renderReportMarkdown(filesSnapshot)
 			}
 		];
 		for (const target of targetStatuses) {
@@ -39593,10 +39514,10 @@ async function writeOutputFiles(outputDir, summary, filesSnapshot, targetStatuse
 	await fs.mkdir(path.join(outputDir, "targets"), { recursive: true });
 	const summaryPath = path.join(outputDir, "summary.json");
 	const filesPath = path.join(outputDir, "files.json");
-	const reportPath = path.join(outputDir, "report.html");
+	const reportPath = path.join(outputDir, "report.md");
 	await fs.writeFile(summaryPath, `${JSON.stringify(summary, null, 2)}\n`);
 	await fs.writeFile(filesPath, `${JSON.stringify(filesSnapshot, null, 2)}\n`);
-	await fs.writeFile(reportPath, renderReportHtml(filesSnapshot));
+	await fs.writeFile(reportPath, renderReportMarkdown(filesSnapshot));
 	for (const target of targetStatuses) {
 		const targetConfig = config.targets.find((item) => item.id === target.id);
 		const snapshot = snapshots.find((item) => item.id === target.id);
