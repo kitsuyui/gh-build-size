@@ -2,7 +2,14 @@
   "id": "types",
   "label": "Type declarations",
   "files": [
-    "dist/index.d.mts"
+    {
+      "path": "dist/index.d.mts",
+      "sizes": {
+        "raw": 11,
+        "gzip": 31,
+        "brotli": 15
+      }
+    }
   ],
   "totals": {
     "raw": 11,

@@ -2,11 +2,18 @@
   "id": "runtime",
   "label": "Runtime bundle",
   "files": [
-    "dist/index.mjs"
+    {
+      "path": "dist/index.mjs",
+      "sizes": {
+        "raw": 1556357,
+        "gzip": 348102,
+        "brotli": 275571
+      }
+    }
   ],
   "totals": {
-    "raw": 1554715,
-    "gzip": 347810,
-    "brotli": 275579
+    "raw": 1556357,
+    "gzip": 348102,
+    "brotli": 275571
   }
 }

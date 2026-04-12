@@ -1,6 +1,10 @@
 {
-  "id": "total",
-  "label": "Total dist",
+  "generated_at": "2026-04-12T14:06:24.171Z",
+  "repository": "kitsuyui/gh-build-size",
+  "default_branch": "main",
+  "publish_branch": "gh-build-size-assets",
+  "event_name": "push",
+  "head_reference": "ae8e02b6c9447b12241c90df77d5beac778d7b61",
   "files": [
     {
       "path": "dist/index.d.mts",
@@ -26,10 +30,5 @@
         "brotli": 481191
       }
     }
-  ],
-  "totals": {
-    "raw": 4306913,
-    "gzip": 951231,
-    "brotli": 756777
-  }
+  ]
 }

@@ -2,11 +2,18 @@
   "id": "sourcemaps",
   "label": "Source maps",
   "files": [
-    "dist/index.mjs.map"
+    {
+      "path": "dist/index.mjs.map",
+      "sizes": {
+        "raw": 2750545,
+        "gzip": 603098,
+        "brotli": 481191
+      }
+    }
   ],
   "totals": {
-    "raw": 2747269,
-    "gzip": 602534,
-    "brotli": 480621
+    "raw": 2750545,
+    "gzip": 603098,
+    "brotli": 481191
   }
 }
