@@ -1,2 +1,4 @@
 node_modules/
 .gh-build-size/
+coverage/
+.tmp/

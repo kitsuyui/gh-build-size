@@ -102,6 +102,17 @@ targets:
 That gives one top-level "total dist" signal alongside more focused targets for
 reviewing regressions.
 
+## Standard CI
+
+This repository also includes a small standard CI set modeled after
+`gh-counter`:
+
+- `.github/workflows/test.yml`: lint, test, and build on pull requests and on
+  `main`
+- `.github/workflows/octocov.yml`: publish coverage and code-to-test ratio with
+  `octocov`
+- `.github/workflows/spellcheck.yml`: run `typos` on pull requests
+
 ## Notes
 
 - Run the build step before `gh-build-size`.
