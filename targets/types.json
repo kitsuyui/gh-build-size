@@ -1,0 +1,12 @@
+{
+  "id": "types",
+  "label": "Type declarations",
+  "files": [
+    "dist/index.d.mts"
+  ],
+  "totals": {
+    "raw": 11,
+    "gzip": 31,
+    "brotli": 15
+  }
+}

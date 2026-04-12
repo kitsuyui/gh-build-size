@@ -1,0 +1,14 @@
+{
+  "id": "total",
+  "label": "Total dist",
+  "files": [
+    "dist/index.d.mts",
+    "dist/index.mjs",
+    "dist/index.mjs.map"
+  ],
+  "totals": {
+    "raw": 74679,
+    "gzip": 18683,
+    "brotli": 16604
+  }
+}

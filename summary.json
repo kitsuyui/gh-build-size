@@ -1,0 +1,131 @@
+{
+  "generated_at": "2026-04-12T06:44:19.382Z",
+  "repository": "kitsuyui/gh-build-size",
+  "default_branch": "main",
+  "publish_branch": "gh-build-size-assets",
+  "event_name": "push",
+  "base_label": "main",
+  "base_reference": null,
+  "head_label": "main",
+  "head_reference": "47dafa3ae2d29ff9b6bc7a929daefad58c42dd5d",
+  "targets": [
+    {
+      "id": "total",
+      "label": "Total dist",
+      "files": [
+        "dist/index.d.mts",
+        "dist/index.mjs",
+        "dist/index.mjs.map"
+      ],
+      "touched_files": [],
+      "commentable": true,
+      "sizes": {
+        "raw": {
+          "current": 74679,
+          "base": null,
+          "delta": null
+        },
+        "gzip": {
+          "current": 18683,
+          "base": null,
+          "delta": null
+        },
+        "brotli": {
+          "current": 16604,
+          "base": null,
+          "delta": null
+        }
+      },
+      "violations": [],
+      "badge_path": ".gh-build-size/badges/total.svg",
+      "target_path": ".gh-build-size/targets/total.json"
+    },
+    {
+      "id": "runtime",
+      "label": "Runtime bundle",
+      "files": [
+        "dist/index.mjs"
+      ],
+      "touched_files": [],
+      "commentable": true,
+      "sizes": {
+        "raw": {
+          "current": 25339,
+          "base": null,
+          "delta": null
+        },
+        "gzip": {
+          "current": 6582,
+          "base": null,
+          "delta": null
+        },
+        "brotli": {
+          "current": 5818,
+          "base": null,
+          "delta": null
+        }
+      },
+      "violations": [],
+      "badge_path": ".gh-build-size/badges/runtime.svg",
+      "target_path": ".gh-build-size/targets/runtime.json"
+    },
+    {
+      "id": "sourcemaps",
+      "label": "Source maps",
+      "files": [
+        "dist/index.mjs.map"
+      ],
+      "touched_files": [],
+      "commentable": true,
+      "sizes": {
+        "raw": {
+          "current": 49329,
+          "base": null,
+          "delta": null
+        },
+        "gzip": {
+          "current": 12070,
+          "base": null,
+          "delta": null
+        },
+        "brotli": {
+          "current": 10771,
+          "base": null,
+          "delta": null
+        }
+      },
+      "violations": [],
+      "badge_path": ".gh-build-size/badges/sourcemaps.svg",
+      "target_path": ".gh-build-size/targets/sourcemaps.json"
+    },
+    {
+      "id": "types",
+      "label": "Type declarations",
+      "files": [
+        "dist/index.d.mts"
+      ],
+      "touched_files": [],
+      "commentable": true,
+      "sizes": {
+        "raw": {
+          "current": 11,
+          "base": null,
+          "delta": null
+        },
+        "gzip": {
+          "current": 31,
+          "base": null,
+          "delta": null
+        },
+        "brotli": {
+          "current": 15,
+          "base": null,
+          "delta": null
+        }
+      },
+      "violations": [],
+      "badge_path": ".gh-build-size/badges/types.svg",
+      "target_path": ".gh-build-size/targets/types.json"
+    }
+  ]
+}

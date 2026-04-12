@@ -1,0 +1,12 @@
+{
+  "id": "runtime",
+  "label": "Runtime bundle",
+  "files": [
+    "dist/index.mjs"
+  ],
+  "totals": {
+    "raw": 25339,
+    "gzip": 6582,
+    "brotli": 5818
+  }
+}
