@@ -348,7 +348,7 @@ export async function normalizeConfig(
       directory: config.publish?.directory ?? '.',
       summary_filename: config.publish?.summary_filename ?? 'summary.json',
       files_filename: config.publish?.files_filename ?? 'files.json',
-      report_filename: config.publish?.report_filename ?? 'report.html',
+      report_filename: config.publish?.report_filename ?? 'report.md',
       badges_directory: config.publish?.badges_directory ?? 'badges',
       targets_directory: config.publish?.targets_directory ?? 'targets',
     },
