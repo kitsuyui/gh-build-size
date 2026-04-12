@@ -67,7 +67,7 @@ function buildSummary(
 async function run(): Promise<void> {
   const inputs = getInputs()
   const actionConfig = await loadConfig(inputs.configPath)
-  const config = normalizeConfig(actionConfig, inputs)
+  const config = await normalizeConfig(actionConfig, inputs)
   const defaultBranch = await resolveDefaultBranch(config.defaultBranch)
   const octokit = github.getOctokit(inputs.githubToken)
   const headReference = await currentHeadReference()

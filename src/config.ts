@@ -2,6 +2,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import * as core from '@actions/core'
 import Ajv from 'ajv'
+import fg from 'fast-glob'
 import YAML from 'yaml'
 
 import type {
@@ -10,6 +11,7 @@ import type {
   Compression,
   NormalizedConfig,
   TargetConfig,
+  WorkspacePackagesResolverConfig,
 } from './types'
 
 const compressions = ['raw', 'gzip', 'brotli'] as const satisfies Compression[]
@@ -61,7 +63,6 @@ const schema = {
     },
     targets: {
       type: 'array',
-      minItems: 1,
       items: {
         type: 'object',
         additionalProperties: false,
@@ -129,8 +130,79 @@ const schema = {
         },
       },
     },
+    resolvers: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['type', 'root'],
+        properties: {
+          type: { const: 'workspace-packages' },
+          root: { type: 'string', minLength: 1 },
+          dist_dir: { type: 'string' },
+          include: {
+            type: 'array',
+            minItems: 1,
+            items: { type: 'string' },
+          },
+          exclude: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+          compressions: {
+            type: 'array',
+            minItems: 1,
+            items: { enum: compressions },
+          },
+          limits: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              raw: thresholdSchema,
+              gzip: thresholdSchema,
+              brotli: thresholdSchema,
+            },
+          },
+          ratchet: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              raw: ratchetSchema,
+              gzip: ratchetSchema,
+              brotli: ratchetSchema,
+            },
+          },
+          badge: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              label: { type: 'string' },
+              compression: { enum: compressions },
+              colors: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                  ok: { type: 'string' },
+                  warn: { type: 'string' },
+                  error: { type: 'string' },
+                },
+              },
+              thresholds: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                  warn_above: { type: 'integer', minimum: 0 },
+                  error_above: { type: 'integer', minimum: 0 },
+                },
+              },
+            },
+          },
+          id_prefix: { type: 'string' },
+        },
+      },
+    },
   },
-  required: ['targets'],
+  anyOf: [{ required: ['targets'] }, { required: ['resolvers'] }],
 } as const
 
 const ajv = new Ajv({ allErrors: true })
@@ -200,10 +272,75 @@ function normalizeTarget(
   }
 }
 
-export function normalizeConfig(
+function slugifyTargetId(value: string): string {
+  return value
+    .replace(/^@/, '')
+    .replaceAll('/', '-')
+    .replace(/[^a-zA-Z0-9_-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .toLowerCase()
+}
+
+function workspacePackageTarget(
+  resolver: WorkspacePackagesResolverConfig,
+  packageDir: string,
+): TargetConfig {
+  const packageName = path.posix.basename(packageDir)
+  const distDir = path.posix.join(packageDir, resolver.dist_dir ?? 'dist')
+  const include = resolver.include ?? ['**/*']
+
+  return {
+    id: `${resolver.id_prefix ?? 'pkg'}-${slugifyTargetId(packageName)}`,
+    label: packageName,
+    files: include.map((pattern) => path.posix.join(distDir, pattern)),
+    exclude: resolver.exclude?.map((pattern) =>
+      path.posix.join(distDir, pattern),
+    ),
+    compressions: resolver.compressions,
+    limits: resolver.limits,
+    ratchet: resolver.ratchet,
+    badge: resolver.badge,
+  }
+}
+
+async function expandResolvers(
+  resolvers: WorkspacePackagesResolverConfig[],
+  workspaceRoot: string,
+): Promise<TargetConfig[]> {
+  const targets: TargetConfig[] = []
+
+  for (const resolver of resolvers) {
+    const packageJsonPaths = await fg(
+      path.posix.join(resolver.root, '*/package.json'),
+      {
+        cwd: workspaceRoot,
+        onlyFiles: true,
+      },
+    )
+
+    for (const packageJsonPath of packageJsonPaths.sort()) {
+      const packageDir = path.posix.dirname(packageJsonPath)
+      targets.push(workspacePackageTarget(resolver, packageDir))
+    }
+  }
+
+  return targets
+}
+
+export async function normalizeConfig(
   config: ActionConfig,
   inputs: ActionInputs,
-): NormalizedConfig {
+  workspaceRoot = process.cwd(),
+): Promise<NormalizedConfig> {
+  const expandedTargets = await expandResolvers(
+    config.resolvers ?? [],
+    workspaceRoot,
+  )
+  const normalizedTargets = [...(config.targets ?? []), ...expandedTargets].map(
+    normalizeTarget,
+  )
+
   return {
     defaultBranch: inputs.defaultBranch ?? config.default_branch,
     comment: {
@@ -219,6 +356,6 @@ export function normalizeConfig(
       badges_directory: config.publish?.badges_directory ?? 'badges',
       targets_directory: config.publish?.targets_directory ?? 'targets',
     },
-    targets: config.targets.map(normalizeTarget),
+    targets: normalizedTargets,
   }
 }

@@ -68,6 +68,32 @@ targets:
       compression: gzip
 ```
 
+For JavaScript monorepos, `gh-build-size` can also expand package targets
+automatically:
+
+```yaml
+version: 1
+publish:
+  enabled: true
+  branch: gh-build-size-assets
+targets:
+  - id: total
+    label: Total package artifacts
+    files:
+      - packages/*/dist/**
+resolvers:
+  - type: workspace-packages
+    root: packages
+    dist_dir: dist
+    include:
+      - "**/*"
+    badge:
+      compression: gzip
+```
+
+That configuration produces one target per workspace package such as
+`bits128`, `cipher`, and `word-stats`, without listing every package manually.
+
 ## Behavior
 
 - On pull requests, `gh-build-size` resolves a merge base, re-measures the base
