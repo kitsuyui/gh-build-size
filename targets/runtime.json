@@ -5,8 +5,8 @@
     "dist/index.mjs"
   ],
   "totals": {
-    "raw": 25339,
-    "gzip": 6582,
-    "brotli": 5818
+    "raw": 1554715,
+    "gzip": 347810,
+    "brotli": 275579
   }
 }

@@ -7,8 +7,8 @@
     "dist/index.mjs.map"
   ],
   "totals": {
-    "raw": 74679,
-    "gzip": 18683,
-    "brotli": 16604
+    "raw": 4301995,
+    "gzip": 950375,
+    "brotli": 756215
   }
 }

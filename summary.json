@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-04-12T06:44:19.382Z",
+  "generated_at": "2026-04-12T13:48:41.007Z",
   "repository": "kitsuyui/gh-build-size",
   "default_branch": "main",
   "publish_branch": "gh-build-size-assets",
   "event_name": "push",
   "base_label": "main",
-  "base_reference": null,
+  "base_reference": "47dafa3ae2d29ff9b6bc7a929daefad58c42dd5d",
   "head_label": "main",
-  "head_reference": "47dafa3ae2d29ff9b6bc7a929daefad58c42dd5d",
+  "head_reference": "b26b2a4cd7233161bb6cbeeea8d00064fced4f05",
   "targets": [
     {
       "id": "total",
@@ -18,22 +18,23 @@
         "dist/index.mjs.map"
       ],
       "touched_files": [],
+      "baseline_missing": false,
       "commentable": true,
       "sizes": {
         "raw": {
-          "current": 74679,
-          "base": null,
-          "delta": null
+          "current": 4301995,
+          "base": 74679,
+          "delta": 4227316
         },
         "gzip": {
-          "current": 18683,
-          "base": null,
-          "delta": null
+          "current": 950375,
+          "base": 18683,
+          "delta": 931692
         },
         "brotli": {
-          "current": 16604,
-          "base": null,
-          "delta": null
+          "current": 756215,
+          "base": 16604,
+          "delta": 739611
         }
       },
       "violations": [],
@@ -47,25 +48,33 @@
         "dist/index.mjs"
       ],
       "touched_files": [],
+      "baseline_missing": false,
       "commentable": true,
       "sizes": {
         "raw": {
-          "current": 25339,
-          "base": null,
-          "delta": null
+          "current": 1554715,
+          "base": 25339,
+          "delta": 1529376
         },
         "gzip": {
-          "current": 6582,
-          "base": null,
-          "delta": null
+          "current": 347810,
+          "base": 6582,
+          "delta": 341228
         },
         "brotli": {
-          "current": 5818,
-          "base": null,
-          "delta": null
+          "current": 275579,
+          "base": 5818,
+          "delta": 269761
         }
       },
-      "violations": [],
+      "violations": [
+        {
+          "compression": "gzip",
+          "kind": "no_increase",
+          "message": "347810 B increased from 6582 B",
+          "fail": false
+        }
+      ],
       "badge_path": ".gh-build-size/badges/runtime.svg",
       "target_path": ".gh-build-size/targets/runtime.json"
     },
@@ -76,22 +85,23 @@
         "dist/index.mjs.map"
       ],
       "touched_files": [],
+      "baseline_missing": false,
       "commentable": true,
       "sizes": {
         "raw": {
-          "current": 49329,
-          "base": null,
-          "delta": null
+          "current": 2747269,
+          "base": 49329,
+          "delta": 2697940
         },
         "gzip": {
-          "current": 12070,
-          "base": null,
-          "delta": null
+          "current": 602534,
+          "base": 12070,
+          "delta": 590464
         },
         "brotli": {
-          "current": 10771,
-          "base": null,
-          "delta": null
+          "current": 480621,
+          "base": 10771,
+          "delta": 469850
         }
       },
       "violations": [],
@@ -105,22 +115,23 @@
         "dist/index.d.mts"
       ],
       "touched_files": [],
+      "baseline_missing": false,
       "commentable": true,
       "sizes": {
         "raw": {
           "current": 11,
-          "base": null,
-          "delta": null
+          "base": 11,
+          "delta": 0
         },
         "gzip": {
           "current": 31,
-          "base": null,
-          "delta": null
+          "base": 31,
+          "delta": 0
         },
         "brotli": {
           "current": 15,
-          "base": null,
-          "delta": null
+          "base": 15,
+          "delta": 0
         }
       },
       "violations": [],
