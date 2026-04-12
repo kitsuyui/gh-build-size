@@ -4,7 +4,12 @@ import zlib from 'node:zlib'
 import fg from 'fast-glob'
 import micromatch from 'micromatch'
 
-import type { Compression, TargetConfig, TargetSnapshot } from './types'
+import type {
+  Compression,
+  FileSnapshot,
+  TargetConfig,
+  TargetSnapshot,
+} from './types'
 
 const gzip = promisify(zlib.gzip)
 const brotliCompress = promisify(zlib.brotliCompress)
@@ -53,21 +58,39 @@ async function measureFiles(
   files: string[],
   compressions: Compression[],
   readFile: (filePath: string) => Promise<Buffer>,
-): Promise<Record<Compression, number>> {
+): Promise<{
+  files: FileSnapshot[]
+  totals: Record<Compression, number>
+}> {
   const totals: Record<Compression, number> = {
     raw: 0,
     gzip: 0,
     brotli: 0,
   }
+  const measuredFiles: FileSnapshot[] = []
 
   for (const filePath of files) {
     const content = await readFile(filePath)
-    for (const compression of compressions) {
-      totals[compression] += await compressBuffer(compression, content)
+    const sizes: Record<Compression, number> = {
+      raw: 0,
+      gzip: 0,
+      brotli: 0,
     }
+    for (const compression of compressions) {
+      const size = await compressBuffer(compression, content)
+      totals[compression] += size
+      sizes[compression] = size
+    }
+    measuredFiles.push({
+      path: filePath,
+      sizes,
+    })
   }
 
-  return totals
+  return {
+    files: measuredFiles,
+    totals,
+  }
 }
 
 export async function measureWorkspaceTargets(
@@ -76,7 +99,7 @@ export async function measureWorkspaceTargets(
   return Promise.all(
     targets.map(async (target) => {
       const files = await filesForWorkspace(target)
-      const totals = await measureFiles(
+      const measured = await measureFiles(
         files,
         target.compressions,
         (filePath) => fs.readFile(filePath),
@@ -85,8 +108,8 @@ export async function measureWorkspaceTargets(
       return {
         id: target.id,
         label: target.label,
-        files,
-        totals,
+        files: measured.files,
+        totals: measured.totals,
       }
     }),
   )
@@ -101,7 +124,7 @@ export async function measureRevisionTargets(
   return Promise.all(
     targets.map(async (target) => {
       const files = filesForRevision(revisionFiles, target)
-      const totals = await measureFiles(
+      const measured = await measureFiles(
         files,
         target.compressions,
         (filePath) => reader.readFile(revision, filePath),
@@ -110,8 +133,8 @@ export async function measureRevisionTargets(
       return {
         id: target.id,
         label: target.label,
-        files,
-        totals,
+        files: measured.files,
+        totals: measured.totals,
       }
     }),
   )

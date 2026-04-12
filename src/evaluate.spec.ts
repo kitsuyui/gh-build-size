@@ -32,7 +32,16 @@ const currentSnapshots: TargetSnapshot[] = [
   {
     id: 'web',
     label: 'web',
-    files: ['dist/app.js'],
+    files: [
+      {
+        path: 'dist/app.js',
+        sizes: {
+          raw: 120,
+          gzip: 60,
+          brotli: 55,
+        },
+      },
+    ],
     totals: {
       raw: 120,
       gzip: 60,

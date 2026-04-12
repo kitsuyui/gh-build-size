@@ -107,7 +107,7 @@ export function evaluateTargets(
     return {
       id: target.id,
       label: target.label,
-      files: current.files,
+      files: current.files.map((file) => file.path),
       touched_files: touchedFiles,
       baseline_missing: baselineMissing,
       commentable,

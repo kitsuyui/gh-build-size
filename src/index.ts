@@ -19,7 +19,7 @@ import {
 } from './github'
 import { measureRevisionTargets, measureWorkspaceTargets } from './measure'
 
-import type { SummaryStatus } from './types'
+import type { FilesSnapshot, SummaryStatus } from './types'
 
 async function resolveDefaultBranch(configDefault?: string): Promise<string> {
   return (
@@ -61,6 +61,33 @@ function buildSummary(
     head_label: headLabel,
     head_reference: headReference,
     targets,
+  }
+}
+
+function buildFilesSnapshot(
+  defaultBranch: string,
+  publishBranch: string | null,
+  headReference: string,
+  snapshots: Awaited<ReturnType<typeof measureWorkspaceTargets>>,
+): FilesSnapshot {
+  const files = new Map<string, FilesSnapshot['files'][number]>()
+
+  for (const snapshot of snapshots) {
+    for (const file of snapshot.files) {
+      files.set(file.path, file)
+    }
+  }
+
+  return {
+    generated_at: new Date().toISOString(),
+    repository: github.context.payload.repository?.full_name ?? '',
+    default_branch: defaultBranch,
+    publish_branch: publishBranch,
+    event_name: github.context.eventName,
+    head_reference: headReference,
+    files: [...files.values()].sort((left, right) =>
+      left.path.localeCompare(right.path),
+    ),
   }
 }
 
@@ -120,7 +147,14 @@ async function run(): Promise<void> {
       publishedSummary?.targets.map((target) => ({
         id: target.id,
         label: target.label,
-        files: target.files,
+        files: target.files.map((filePath) => ({
+          path: filePath,
+          sizes: {
+            raw: 0,
+            gzip: 0,
+            brotli: 0,
+          },
+        })),
         totals: {
           raw: target.sizes.raw.current,
           gzip: target.sizes.gzip.current,
@@ -165,10 +199,17 @@ async function run(): Promise<void> {
     ),
     inputs.outputDir,
   )
+  const filesSnapshot = buildFilesSnapshot(
+    defaultBranch,
+    publishBranch,
+    headReference,
+    currentSnapshots,
+  )
 
   await writeOutputFiles(
     inputs.outputDir,
     summary,
+    filesSnapshot,
     evaluatedTargets,
     currentSnapshots,
     config,
@@ -181,6 +222,7 @@ async function run(): Promise<void> {
     await publishAssets(
       octokit,
       summary,
+      filesSnapshot,
       evaluatedTargets,
       currentSnapshots,
       config,

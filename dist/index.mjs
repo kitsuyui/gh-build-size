@@ -38241,6 +38241,7 @@ const schema = {
 				branch: { type: "string" },
 				directory: { type: "string" },
 				summary_filename: { type: "string" },
+				files_filename: { type: "string" },
 				badges_directory: { type: "string" },
 				targets_directory: { type: "string" }
 			}
@@ -38508,6 +38509,7 @@ async function normalizeConfig(config, inputs, workspaceRoot = process.cwd()) {
 			branch: inputs.publishBranch ?? config.publish?.branch ?? "gh-build-size",
 			directory: config.publish?.directory ?? ".",
 			summary_filename: config.publish?.summary_filename ?? "summary.json",
+			files_filename: config.publish?.files_filename ?? "files.json",
 			badges_directory: config.publish?.badges_directory ?? "badges",
 			targets_directory: config.publish?.targets_directory ?? "targets"
 		},
@@ -38578,7 +38580,7 @@ function evaluateTargets(config, currentSnapshots, baseSnapshots, touchedFilesBy
 		return {
 			id: target.id,
 			label: target.label,
-			files: current.files,
+			files: current.files.map((file) => file.path),
 			touched_files: touchedFiles,
 			baseline_missing: baselineMissing,
 			commentable,
@@ -39430,7 +39432,7 @@ async function ensureBranch(octokit, branch) {
 	}
 	return { commitSha: null };
 }
-async function publishAssets(octokit, summary, targetStatuses, snapshots, config) {
+async function publishAssets(octokit, summary, filesSnapshot, targetStatuses, snapshots, config) {
 	if (!config.publish.enabled || !summary.publish_branch) return;
 	const branch = summary.publish_branch;
 	try {
@@ -39440,6 +39442,11 @@ async function publishAssets(octokit, summary, targetStatuses, snapshots, config
 			mode: "100644",
 			type: "blob",
 			content: `${JSON.stringify(summary, null, 2)}\n`
+		}, {
+			path: path.posix.join(config.publish.directory, config.publish.files_filename),
+			mode: "100644",
+			type: "blob",
+			content: `${JSON.stringify(filesSnapshot, null, 2)}\n`
 		}];
 		for (const target of targetStatuses) {
 			const targetConfig = config.targets.find((item) => item.id === target.id);
@@ -39487,12 +39494,14 @@ async function publishAssets(octokit, summary, targetStatuses, snapshots, config
 		throw error;
 	}
 }
-async function writeOutputFiles(outputDir, summary, targetStatuses, snapshots, config) {
+async function writeOutputFiles(outputDir, summary, filesSnapshot, targetStatuses, snapshots, config) {
 	await fs.mkdir(outputDir, { recursive: true });
 	await fs.mkdir(path.join(outputDir, "badges"), { recursive: true });
 	await fs.mkdir(path.join(outputDir, "targets"), { recursive: true });
 	const summaryPath = path.join(outputDir, "summary.json");
+	const filesPath = path.join(outputDir, "files.json");
 	await fs.writeFile(summaryPath, `${JSON.stringify(summary, null, 2)}\n`);
+	await fs.writeFile(filesPath, `${JSON.stringify(filesSnapshot, null, 2)}\n`);
 	for (const target of targetStatuses) {
 		const targetConfig = config.targets.find((item) => item.id === target.id);
 		const snapshot = snapshots.find((item) => item.id === target.id);
@@ -39501,6 +39510,7 @@ async function writeOutputFiles(outputDir, summary, targetStatuses, snapshots, c
 		await fs.writeFile(path.join(outputDir, "targets", `${target.id}.json`), `${JSON.stringify(snapshot, null, 2)}\n`);
 	}
 	import_core.setOutput("summary-path", summaryPath);
+	import_core.setOutput("files-path", filesPath);
 	import_core.setOutput("summary-json", JSON.stringify(summary));
 }
 
@@ -39530,34 +39540,49 @@ async function measureFiles(files, compressions, readFile) {
 		gzip: 0,
 		brotli: 0
 	};
+	const measuredFiles = [];
 	for (const filePath of files) {
 		const content = await readFile(filePath);
-		for (const compression of compressions) totals[compression] += await compressBuffer(compression, content);
+		const sizes = {
+			raw: 0,
+			gzip: 0,
+			brotli: 0
+		};
+		for (const compression of compressions) {
+			const size = await compressBuffer(compression, content);
+			totals[compression] += size;
+			sizes[compression] = size;
+		}
+		measuredFiles.push({
+			path: filePath,
+			sizes
+		});
 	}
-	return totals;
+	return {
+		files: measuredFiles,
+		totals
+	};
 }
 async function measureWorkspaceTargets(targets) {
 	return Promise.all(targets.map(async (target) => {
-		const files = await filesForWorkspace(target);
-		const totals = await measureFiles(files, target.compressions, (filePath) => fs.readFile(filePath));
+		const measured = await measureFiles(await filesForWorkspace(target), target.compressions, (filePath) => fs.readFile(filePath));
 		return {
 			id: target.id,
 			label: target.label,
-			files,
-			totals
+			files: measured.files,
+			totals: measured.totals
 		};
 	}));
 }
 async function measureRevisionTargets(revision, targets, reader) {
 	const revisionFiles = await reader.listFiles(revision);
 	return Promise.all(targets.map(async (target) => {
-		const files = filesForRevision(revisionFiles, target);
-		const totals = await measureFiles(files, target.compressions, (filePath) => reader.readFile(revision, filePath));
+		const measured = await measureFiles(filesForRevision(revisionFiles, target), target.compressions, (filePath) => reader.readFile(revision, filePath));
 		return {
 			id: target.id,
 			label: target.label,
-			files,
-			totals
+			files: measured.files,
+			totals: measured.totals
 		};
 	}));
 }
@@ -39591,6 +39616,19 @@ function buildSummary(defaultBranch, publishBranch, baseLabel, baseReference, he
 		targets
 	};
 }
+function buildFilesSnapshot(defaultBranch, publishBranch, headReference, snapshots) {
+	const files = /* @__PURE__ */ new Map();
+	for (const snapshot of snapshots) for (const file of snapshot.files) files.set(file.path, file);
+	return {
+		generated_at: (/* @__PURE__ */ new Date()).toISOString(),
+		repository: import_github.context.payload.repository?.full_name ?? "",
+		default_branch: defaultBranch,
+		publish_branch: publishBranch,
+		event_name: import_github.context.eventName,
+		head_reference: headReference,
+		files: [...files.values()].sort((left, right) => left.path.localeCompare(right.path))
+	};
+}
 async function run() {
 	const inputs = getInputs();
 	const config = await normalizeConfig(await loadConfig(inputs.configPath), inputs);
@@ -39619,7 +39657,14 @@ async function run() {
 		baseSnapshots = publishedSummary?.targets.map((target) => ({
 			id: target.id,
 			label: target.label,
-			files: target.files,
+			files: target.files.map((filePath) => ({
+				path: filePath,
+				sizes: {
+					raw: 0,
+					gzip: 0,
+					brotli: 0
+				}
+			})),
 			totals: {
 				raw: target.sizes.raw.current,
 				gzip: target.sizes.gzip.current,
@@ -39631,9 +39676,10 @@ async function run() {
 	const evaluatedTargets = evaluateTargets(config, currentSnapshots, baseSnapshots, touchedFilesByTarget, publishedTargetIds, import_github.context.eventName === "pull_request");
 	const publishBranch = import_github.context.eventName === "push" && import_github.context.ref === `refs/heads/${defaultBranch}` && config.publish.enabled ? config.publish.branch : null;
 	const summary = attachOutputPaths(buildSummary(defaultBranch, publishBranch, baseLabel, baseReference, headLabel, headReference, evaluatedTargets), inputs.outputDir);
-	await writeOutputFiles(inputs.outputDir, summary, evaluatedTargets, currentSnapshots, config);
+	const filesSnapshot = buildFilesSnapshot(defaultBranch, publishBranch, headReference, currentSnapshots);
+	await writeOutputFiles(inputs.outputDir, summary, filesSnapshot, evaluatedTargets, currentSnapshots, config);
 	if (import_github.context.eventName === "pull_request") await updatePullRequestComment(octokit, summary, config);
-	if (publishBranch) await publishAssets(octokit, summary, evaluatedTargets, currentSnapshots, config);
+	if (publishBranch) await publishAssets(octokit, summary, filesSnapshot, evaluatedTargets, currentSnapshots, config);
 	const failingViolations = countFailingViolations(evaluatedTargets);
 	import_core.setOutput("violation-count", String(failingViolations));
 	import_core.setOutput("has-violations", String(failingViolations > 0));

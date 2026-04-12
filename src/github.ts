@@ -7,6 +7,7 @@ import { renderBadge } from './badge'
 import { buildMarker, decideCommentAction, renderComment } from './comment'
 
 import type {
+  FilesSnapshot,
   NormalizedConfig,
   SummaryStatus,
   TargetSnapshot,
@@ -152,6 +153,7 @@ async function ensureBranch(
 export async function publishAssets(
   octokit: Octokit,
   summary: SummaryStatus,
+  filesSnapshot: FilesSnapshot,
   targetStatuses: TargetStatus[],
   snapshots: TargetSnapshot[],
   config: NormalizedConfig,
@@ -172,6 +174,15 @@ export async function publishAssets(
         mode: '100644' as const,
         type: 'blob' as const,
         content: `${JSON.stringify(summary, null, 2)}\n`,
+      },
+      {
+        path: path.posix.join(
+          config.publish.directory,
+          config.publish.files_filename,
+        ),
+        mode: '100644' as const,
+        type: 'blob' as const,
+        content: `${JSON.stringify(filesSnapshot, null, 2)}\n`,
       },
     ]
 
@@ -242,6 +253,7 @@ export async function publishAssets(
 export async function writeOutputFiles(
   outputDir: string,
   summary: SummaryStatus,
+  filesSnapshot: FilesSnapshot,
   targetStatuses: TargetStatus[],
   snapshots: TargetSnapshot[],
   config: NormalizedConfig,
@@ -250,7 +262,9 @@ export async function writeOutputFiles(
   await fs.mkdir(path.join(outputDir, 'badges'), { recursive: true })
   await fs.mkdir(path.join(outputDir, 'targets'), { recursive: true })
   const summaryPath = path.join(outputDir, 'summary.json')
+  const filesPath = path.join(outputDir, 'files.json')
   await fs.writeFile(summaryPath, `${JSON.stringify(summary, null, 2)}\n`)
+  await fs.writeFile(filesPath, `${JSON.stringify(filesSnapshot, null, 2)}\n`)
 
   for (const target of targetStatuses) {
     const targetConfig = config.targets.find((item) => item.id === target.id)
@@ -269,5 +283,6 @@ export async function writeOutputFiles(
   }
 
   core.setOutput('summary-path', summaryPath)
+  core.setOutput('files-path', filesPath)
   core.setOutput('summary-json', JSON.stringify(summary))
 }

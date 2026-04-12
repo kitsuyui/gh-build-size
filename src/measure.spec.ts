@@ -37,7 +37,16 @@ describe('measureWorkspaceTargets', () => {
           compressions: ['raw', 'gzip', 'brotli'],
         },
       ])
-      expect(snapshots[0]?.files).toEqual(['dist/app.js'])
+      expect(snapshots[0]?.files).toEqual([
+        {
+          path: 'dist/app.js',
+          sizes: {
+            raw: expect.any(Number),
+            gzip: expect.any(Number),
+            brotli: expect.any(Number),
+          },
+        },
+      ])
       expect(snapshots[0]?.totals.raw).toBeGreaterThan(0)
       expect(snapshots[0]?.totals.gzip).toBeGreaterThan(0)
       expect(snapshots[0]?.totals.brotli).toBeGreaterThan(0)

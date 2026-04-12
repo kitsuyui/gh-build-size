@@ -57,6 +57,7 @@ export interface PublishConfig {
   branch?: string
   directory?: string
   summary_filename?: string
+  files_filename?: string
   badges_directory?: string
   targets_directory?: string
 }
@@ -85,11 +86,26 @@ export interface ActionInputs {
   outputDir: string
 }
 
+export interface FileSnapshot {
+  path: string
+  sizes: Record<Compression, number>
+}
+
 export interface TargetSnapshot {
   id: string
   label: string
-  files: string[]
+  files: FileSnapshot[]
   totals: Record<Compression, number>
+}
+
+export interface FilesSnapshot {
+  generated_at: string
+  repository: string
+  default_branch: string
+  publish_branch: string | null
+  event_name: string
+  head_reference: string
+  files: FileSnapshot[]
 }
 
 export interface SizeViolation {
