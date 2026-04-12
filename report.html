@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>gh-build-size report</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 2rem;
+        background: #f7f7f5;
+        color: #1f2328;
+      }
+      main {
+        max-width: 72rem;
+        margin: 0 auto;
+      }
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: 2rem;
+      }
+      .meta {
+        margin-bottom: 1.5rem;
+        color: #57606a;
+      }
+      p {
+        margin: 0.25rem 0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #ffffff;
+      }
+      th, td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #d1d9e0;
+        text-align: left;
+      }
+      th {
+        background: #f0f3f6;
+      }
+      td:nth-child(n + 2), th:nth-child(n + 2) {
+        text-align: right;
+        white-space: nowrap;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, monospace;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>gh-build-size report</h1>
+      <div class="meta">
+        <p>Repository: <strong>kitsuyui/gh-build-size</strong></p>
+        <p>Head: <code>c86245bcf26ddc908820c70e56ab0f65d6e0a74f</code></p>
+        <p>Generated at: 2026-04-12T14:34:08.446Z</p>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>File</th>
+            <th>Raw</th>
+            <th>Gzip</th>
+            <th>Brotli</th>
+          </tr>
+        </thead>
+        <tbody>
+
+        <tr>
+          <td><code>dist/index.d.mts</code></td>
+          <td>11 B</td>
+          <td>31 B</td>
+          <td>15 B</td>
+        </tr>
+
+        <tr>
+          <td><code>dist/index.mjs</code></td>
+          <td>1,558,729 B</td>
+          <td>348,896 B</td>
+          <td>276,320 B</td>
+        </tr>
+
+        <tr>
+          <td><code>dist/index.mjs.map</code></td>
+          <td>2,753,802 B</td>
+          <td>603,924 B</td>
+          <td>481,445 B</td>
+        </tr>
+        </tbody>
+      </table>
+    </main>
+  </body>
+</html>
