@@ -38242,6 +38242,7 @@ const schema = {
 				directory: { type: "string" },
 				summary_filename: { type: "string" },
 				files_filename: { type: "string" },
+				report_filename: { type: "string" },
 				badges_directory: { type: "string" },
 				targets_directory: { type: "string" }
 			}
@@ -38411,19 +38412,11 @@ const validateConfig = new import_ajv.default({ allErrors: true }).compile(schem
 const DEFAULT_COMMENT_TEMPLATE = `{{{marker}}}
 ## gh-build-size
 
-| Target | Compression | {{base_header}} | {{head_header}} | +/- |
-| --- | --- | ---: | ---: | ---: |
+| Target | {{base_header}} | {{head_header}} | +/- |
+| --- | ---: | ---: | ---: |
 {{#rows}}
-| {{{label}}} | {{compression}} | {{base}} | {{current}} | {{delta}} |
+| {{{label}}} | {{base}} | {{current}} | {{delta}} |
 {{/rows}}
-
-{{#has_first_targets}}
-### Initial measurement
-{{#first_targets}}
-- {{label}} has no published baseline yet.
-{{/first_targets}}
-
-{{/has_first_targets}}
 
 {{#has_violations}}
 ### Violations
@@ -38510,6 +38503,7 @@ async function normalizeConfig(config, inputs, workspaceRoot = process.cwd()) {
 			directory: config.publish?.directory ?? ".",
 			summary_filename: config.publish?.summary_filename ?? "summary.json",
 			files_filename: config.publish?.files_filename ?? "files.json",
+			report_filename: config.publish?.report_filename ?? "report.html",
 			badges_directory: config.publish?.badges_directory ?? "badges",
 			targets_directory: config.publish?.targets_directory ?? "targets"
 		},
@@ -38768,7 +38762,7 @@ var entityMap = {
 	"`": "&#x60;",
 	"=": "&#x3D;"
 };
-function escapeHtml(string) {
+function escapeHtml$1(string) {
 	return String(string).replace(/[&<>"'`=\/]/g, function fromEntityMap(s) {
 		return entityMap[s];
 	});
@@ -39285,14 +39279,14 @@ mustache.render = function render(template, view, partials, config) {
 	if (typeof template !== "string") throw new TypeError("Invalid template! Template should be a \"string\" but \"" + typeStr(template) + "\" was given as the first argument for mustache#render(template, view, partials)");
 	return defaultWriter.render(template, view, partials, config);
 };
-mustache.escape = escapeHtml;
+mustache.escape = escapeHtml$1;
 mustache.Scanner = Scanner;
 mustache.Context = Context;
 mustache.Writer = Writer;
 
 //#endregion
 //#region src/comment.ts
-function formatBytes(value) {
+function formatBytes$1(value) {
 	if (value === null) return "n/a";
 	return `${value.toLocaleString("en-US")} B`;
 }
@@ -39305,30 +39299,22 @@ function buildMarker(key) {
 	return `<!-- gh-build-size:${key} -->`;
 }
 function renderComment(summary, template, marker) {
-	const rows = summary.targets.filter((target) => target.commentable).flatMap((target) => [
-		"raw",
-		"gzip",
-		"brotli"
-	].filter((compression) => target.sizes[compression].base !== null || target.sizes[compression].current > 0).map((compression) => ({
+	const rows = summary.targets.filter((target) => target.commentable).filter((target) => target.sizes.raw.base !== null || target.sizes.raw.current > 0).map((target) => ({
 		label: `\`${target.label}\``,
-		compression,
-		base: formatBytes(target.sizes[compression].base),
-		current: formatBytes(target.sizes[compression].current),
-		delta: formatDelta(target.sizes[compression].delta)
-	})));
+		base: formatBytes$1(target.sizes.raw.base),
+		current: formatBytes$1(target.sizes.raw.current),
+		delta: formatDelta(target.sizes.raw.delta)
+	}));
 	const violations = summary.targets.flatMap((target) => target.violations.map((violation) => ({
 		label: target.label,
 		compression: violation.compression,
 		message: violation.message
 	})));
-	const firstTargets = summary.targets.filter((target) => target.commentable && target.baseline_missing).map((target) => ({ label: target.label }));
 	return mustache.render(template, {
 		marker,
 		base_header: summary.base_label,
 		head_header: summary.head_label,
 		rows,
-		first_targets: firstTargets,
-		has_first_targets: firstTargets.length > 0,
 		violations,
 		has_violations: violations.length > 0
 	});
@@ -39349,6 +39335,104 @@ function decideCommentAction(existing, nextBody) {
 		body: nextBody
 	};
 	return { type: "skip" };
+}
+
+//#endregion
+//#region src/report.ts
+function escapeHtml(value) {
+	return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\"", "&quot;").replaceAll("'", "&#39;");
+}
+function formatBytes(value) {
+	return `${value.toLocaleString("en-US")} B`;
+}
+function renderReportHtml(snapshot) {
+	const rows = snapshot.files.map((file) => `
+        <tr>
+          <td><code>${escapeHtml(file.path)}</code></td>
+          <td>${formatBytes(file.sizes.raw)}</td>
+          <td>${formatBytes(file.sizes.gzip)}</td>
+          <td>${formatBytes(file.sizes.brotli)}</td>
+        </tr>`).join("\n");
+	return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>gh-build-size report</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 2rem;
+        background: #f7f7f5;
+        color: #1f2328;
+      }
+      main {
+        max-width: 72rem;
+        margin: 0 auto;
+      }
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: 2rem;
+      }
+      .meta {
+        margin-bottom: 1.5rem;
+        color: #57606a;
+      }
+      p {
+        margin: 0.25rem 0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #ffffff;
+      }
+      th, td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #d1d9e0;
+        text-align: left;
+      }
+      th {
+        background: #f0f3f6;
+      }
+      td:nth-child(n + 2), th:nth-child(n + 2) {
+        text-align: right;
+        white-space: nowrap;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, monospace;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>gh-build-size report</h1>
+      <div class="meta">
+        <p>Repository: <strong>${escapeHtml(snapshot.repository)}</strong></p>
+        <p>Head: <code>${escapeHtml(snapshot.head_reference)}</code></p>
+        <p>Generated at: ${escapeHtml(snapshot.generated_at)}</p>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>File</th>
+            <th>Raw</th>
+            <th>Gzip</th>
+            <th>Brotli</th>
+          </tr>
+        </thead>
+        <tbody>
+${rows}
+        </tbody>
+      </table>
+    </main>
+  </body>
+</html>
+`;
 }
 
 //#endregion
@@ -39437,17 +39521,26 @@ async function publishAssets(octokit, summary, filesSnapshot, targetStatuses, sn
 	const branch = summary.publish_branch;
 	try {
 		const branchState = await ensureBranch(octokit, branch);
-		const treeEntries = [{
-			path: path.posix.join(config.publish.directory, config.publish.summary_filename),
-			mode: "100644",
-			type: "blob",
-			content: `${JSON.stringify(summary, null, 2)}\n`
-		}, {
-			path: path.posix.join(config.publish.directory, config.publish.files_filename),
-			mode: "100644",
-			type: "blob",
-			content: `${JSON.stringify(filesSnapshot, null, 2)}\n`
-		}];
+		const treeEntries = [
+			{
+				path: path.posix.join(config.publish.directory, config.publish.summary_filename),
+				mode: "100644",
+				type: "blob",
+				content: `${JSON.stringify(summary, null, 2)}\n`
+			},
+			{
+				path: path.posix.join(config.publish.directory, config.publish.files_filename),
+				mode: "100644",
+				type: "blob",
+				content: `${JSON.stringify(filesSnapshot, null, 2)}\n`
+			},
+			{
+				path: path.posix.join(config.publish.directory, config.publish.report_filename),
+				mode: "100644",
+				type: "blob",
+				content: renderReportHtml(filesSnapshot)
+			}
+		];
 		for (const target of targetStatuses) {
 			const targetConfig = config.targets.find((item) => item.id === target.id);
 			const snapshot = snapshots.find((item) => item.id === target.id);
@@ -39500,8 +39593,10 @@ async function writeOutputFiles(outputDir, summary, filesSnapshot, targetStatuse
 	await fs.mkdir(path.join(outputDir, "targets"), { recursive: true });
 	const summaryPath = path.join(outputDir, "summary.json");
 	const filesPath = path.join(outputDir, "files.json");
+	const reportPath = path.join(outputDir, "report.html");
 	await fs.writeFile(summaryPath, `${JSON.stringify(summary, null, 2)}\n`);
 	await fs.writeFile(filesPath, `${JSON.stringify(filesSnapshot, null, 2)}\n`);
+	await fs.writeFile(reportPath, renderReportHtml(filesSnapshot));
 	for (const target of targetStatuses) {
 		const targetConfig = config.targets.find((item) => item.id === target.id);
 		const snapshot = snapshots.find((item) => item.id === target.id);
@@ -39511,6 +39606,7 @@ async function writeOutputFiles(outputDir, summary, filesSnapshot, targetStatuse
 	}
 	import_core.setOutput("summary-path", summaryPath);
 	import_core.setOutput("files-path", filesPath);
+	import_core.setOutput("report-path", reportPath);
 	import_core.setOutput("summary-json", JSON.stringify(summary));
 }
 

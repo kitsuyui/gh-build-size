@@ -58,6 +58,7 @@ export interface PublishConfig {
   directory?: string
   summary_filename?: string
   files_filename?: string
+  report_filename?: string
   badges_directory?: string
   targets_directory?: string
 }

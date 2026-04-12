@@ -52,7 +52,7 @@ describe('comment', () => {
       DEFAULT_COMMENT_TEMPLATE,
       buildMarker('default'),
     )
-    expect(body).toContain('| `web` | raw | 100 B | 120 B | +20 B |')
+    expect(body).toContain('| `web` | 100 B | 120 B | +20 B |')
     expect(body).toContain('120 B exceeds limit 100 B')
   })
 
@@ -69,7 +69,7 @@ describe('comment', () => {
     })
   })
 
-  test('renders initial measurement note for first targets', () => {
+  test('keeps first measurement comments concise', () => {
     const body = renderComment(
       {
         ...summary,
@@ -77,12 +77,18 @@ describe('comment', () => {
           ...target,
           baseline_missing: true,
           touched_files: [],
+          sizes: {
+            ...target.sizes,
+            raw: { current: 120, base: null, delta: null },
+            gzip: { current: 60, base: null, delta: null },
+            brotli: { current: 55, base: null, delta: null },
+          },
         })),
       },
       DEFAULT_COMMENT_TEMPLATE,
       buildMarker('default'),
     )
-    expect(body).toContain('### Initial measurement')
-    expect(body).toContain('web has no published baseline yet.')
+    expect(body).not.toContain('### Initial measurement')
+    expect(body).toContain('| `web` | n&#x2F;a | 120 B | n&#x2F;a |')
   })
 })

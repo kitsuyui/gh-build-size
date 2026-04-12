@@ -15,6 +15,8 @@ const config: NormalizedConfig = {
     branch: 'gh-build-size',
     directory: '.',
     summary_filename: 'summary.json',
+    files_filename: 'files.json',
+    report_filename: 'report.html',
     badges_directory: 'badges',
     targets_directory: 'targets',
   },

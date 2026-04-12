@@ -5,6 +5,7 @@ import * as github from '@actions/github'
 
 import { renderBadge } from './badge'
 import { buildMarker, decideCommentAction, renderComment } from './comment'
+import { renderReportHtml } from './report'
 
 import type {
   FilesSnapshot,
@@ -184,6 +185,15 @@ export async function publishAssets(
         type: 'blob' as const,
         content: `${JSON.stringify(filesSnapshot, null, 2)}\n`,
       },
+      {
+        path: path.posix.join(
+          config.publish.directory,
+          config.publish.report_filename,
+        ),
+        mode: '100644' as const,
+        type: 'blob' as const,
+        content: renderReportHtml(filesSnapshot),
+      },
     ]
 
     for (const target of targetStatuses) {
@@ -263,8 +273,10 @@ export async function writeOutputFiles(
   await fs.mkdir(path.join(outputDir, 'targets'), { recursive: true })
   const summaryPath = path.join(outputDir, 'summary.json')
   const filesPath = path.join(outputDir, 'files.json')
+  const reportPath = path.join(outputDir, 'report.html')
   await fs.writeFile(summaryPath, `${JSON.stringify(summary, null, 2)}\n`)
   await fs.writeFile(filesPath, `${JSON.stringify(filesSnapshot, null, 2)}\n`)
+  await fs.writeFile(reportPath, renderReportHtml(filesSnapshot))
 
   for (const target of targetStatuses) {
     const targetConfig = config.targets.find((item) => item.id === target.id)
@@ -284,5 +296,6 @@ export async function writeOutputFiles(
 
   core.setOutput('summary-path', summaryPath)
   core.setOutput('files-path', filesPath)
+  core.setOutput('report-path', reportPath)
   core.setOutput('summary-json', JSON.stringify(summary))
 }

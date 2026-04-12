@@ -58,6 +58,7 @@ const schema = {
         directory: { type: 'string' },
         summary_filename: { type: 'string' },
         files_filename: { type: 'string' },
+        report_filename: { type: 'string' },
         badges_directory: { type: 'string' },
         targets_directory: { type: 'string' },
       },
@@ -212,19 +213,11 @@ const validateConfig = ajv.compile(schema)
 export const DEFAULT_COMMENT_TEMPLATE = `{{{marker}}}
 ## gh-build-size
 
-| Target | Compression | {{base_header}} | {{head_header}} | +/- |
-| --- | --- | ---: | ---: | ---: |
+| Target | {{base_header}} | {{head_header}} | +/- |
+| --- | ---: | ---: | ---: |
 {{#rows}}
-| {{{label}}} | {{compression}} | {{base}} | {{current}} | {{delta}} |
+| {{{label}}} | {{base}} | {{current}} | {{delta}} |
 {{/rows}}
-
-{{#has_first_targets}}
-### Initial measurement
-{{#first_targets}}
-- {{label}} has no published baseline yet.
-{{/first_targets}}
-
-{{/has_first_targets}}
 
 {{#has_violations}}
 ### Violations
@@ -355,6 +348,7 @@ export async function normalizeConfig(
       directory: config.publish?.directory ?? '.',
       summary_filename: config.publish?.summary_filename ?? 'summary.json',
       files_filename: config.publish?.files_filename ?? 'files.json',
+      report_filename: config.publish?.report_filename ?? 'report.html',
       badges_directory: config.publish?.badges_directory ?? 'badges',
       targets_directory: config.publish?.targets_directory ?? 'targets',
     },
