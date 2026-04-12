@@ -1,0 +1,44 @@
+name: 'gh-build-size'
+description: 'Measure built artifact sizes, comment pull requests, and publish badges'
+
+branding:
+  icon: package
+  color: blue
+
+inputs:
+  github-token:
+    description: 'GitHub token used for PR comments and branch publishing'
+    required: true
+  config-path:
+    description: 'Path to the gh-build-size YAML or JSON config file'
+    required: false
+    default: '.github/gh-build-size.yml'
+  default-branch:
+    description: 'Override the repository default branch'
+    required: false
+  publish-branch:
+    description: 'Override the publish branch configured in the file'
+    required: false
+  comment-key:
+    description: 'Override the HTML marker key used for idempotent PR comments'
+    required: false
+  output-dir:
+    description: 'Directory used to write generated summary JSON and badges'
+    required: false
+    default: '.gh-build-size'
+
+outputs:
+  summary-path:
+    description: 'Path to the generated summary JSON file'
+  summary-json:
+    description: 'The generated summary JSON'
+  violation-count:
+    description: 'Number of target/compression pairs with failing conditions'
+  has-violations:
+    description: 'Whether any configured failing condition was violated'
+  publish-branch:
+    description: 'The publish branch used for generated assets'
+
+runs:
+  using: 'node24'
+  main: 'dist/index.mjs'

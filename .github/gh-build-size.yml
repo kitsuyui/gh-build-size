@@ -1,0 +1,42 @@
+version: 1
+comment:
+  enabled: true
+publish:
+  enabled: true
+  branch: gh-build-size-assets
+targets:
+  - id: total
+    label: Total dist
+    files:
+      - dist/**
+    compressions: [raw, gzip, brotli]
+    badge:
+      compression: gzip
+  - id: runtime
+    label: Runtime bundle
+    files:
+      - dist/*.mjs
+    compressions: [raw, gzip, brotli]
+    limits:
+      gzip:
+        max_bytes: 12000
+        fail: true
+    ratchet:
+      gzip:
+        no_increase: true
+    badge:
+      compression: gzip
+  - id: sourcemaps
+    label: Source maps
+    files:
+      - dist/*.map
+    compressions: [raw, gzip, brotli]
+    badge:
+      compression: raw
+  - id: types
+    label: Type declarations
+    files:
+      - dist/*.d.mts
+    compressions: [raw, gzip, brotli]
+    badge:
+      compression: raw
