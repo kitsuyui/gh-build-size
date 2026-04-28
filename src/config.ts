@@ -306,9 +306,10 @@ async function expandResolvers(
 
   for (const resolver of resolvers) {
     const packageJsonPaths = await fg(
-      path.posix.join(resolver.root, '*/package.json'),
+      path.posix.join(resolver.root, '**/package.json'),
       {
         cwd: workspaceRoot,
+        ignore: ['**/node_modules/**'],
         onlyFiles: true,
       },
     )

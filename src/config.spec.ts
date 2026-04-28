@@ -34,12 +34,19 @@ describe('normalizeConfig', () => {
     await fs.mkdir(path.join(workspaceRoot, 'packages', 'beta'), {
       recursive: true,
     })
+    await fs.mkdir(path.join(workspaceRoot, 'packages', '@scope', 'gamma'), {
+      recursive: true,
+    })
     await fs.writeFile(
       path.join(workspaceRoot, 'packages', 'alpha', 'package.json'),
       '{}\n',
     )
     await fs.writeFile(
       path.join(workspaceRoot, 'packages', 'beta', 'package.json'),
+      '{}\n',
+    )
+    await fs.writeFile(
+      path.join(workspaceRoot, 'packages', '@scope', 'gamma', 'package.json'),
       '{}\n',
     )
 
@@ -70,6 +77,13 @@ describe('normalizeConfig', () => {
         (target) =>
           target.label === 'alpha' &&
           target.files.includes('packages/alpha/dist/**/*'),
+      ),
+    ).toBe(true)
+    expect(
+      config.targets.some(
+        (target) =>
+          target.id === 'pkg-gamma' &&
+          target.files.includes('packages/@scope/gamma/dist/**/*'),
       ),
     ).toBe(true)
   })
