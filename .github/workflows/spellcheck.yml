@@ -8,10 +8,4 @@ permissions:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Check spelling
-        uses: crate-ci/typos@master
+    uses: kitsuyui/gh-actions-workflows/.github/workflows/spellcheck.yml@main
