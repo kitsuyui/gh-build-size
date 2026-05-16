@@ -3,7 +3,7 @@ import { promisify } from 'node:util'
 import zlib from 'node:zlib'
 import fg from 'fast-glob'
 import micromatch from 'micromatch'
-
+import { PUBLISHED_SCHEMA_VERSION } from './schema'
 import type {
   Compression,
   FileSnapshot,
@@ -106,6 +106,7 @@ export async function measureWorkspaceTargets(
       )
 
       return {
+        schema_version: PUBLISHED_SCHEMA_VERSION,
         id: target.id,
         label: target.label,
         files: measured.files,
@@ -131,6 +132,7 @@ export async function measureRevisionTargets(
       )
 
       return {
+        schema_version: PUBLISHED_SCHEMA_VERSION,
         id: target.id,
         label: target.label,
         files: measured.files,

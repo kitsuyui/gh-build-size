@@ -37,6 +37,7 @@ describe('measureWorkspaceTargets', () => {
           compressions: ['raw', 'gzip', 'brotli'],
         },
       ])
+      expect(snapshots[0]?.schema_version).toBe(1)
       expect(snapshots[0]?.files).toEqual([
         {
           path: 'dist/app.js',

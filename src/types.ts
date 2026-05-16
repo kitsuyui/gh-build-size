@@ -94,6 +94,7 @@ export interface FileSnapshot {
 }
 
 export interface TargetSnapshot {
+  schema_version: number
   id: string
   label: string
   files: FileSnapshot[]
@@ -101,6 +102,7 @@ export interface TargetSnapshot {
 }
 
 export interface FilesSnapshot {
+  schema_version: number
   generated_at: string
   repository: string
   default_branch: string
@@ -139,6 +141,7 @@ export interface TargetStatus {
 }
 
 export interface SummaryStatus {
+  schema_version: number
   generated_at: string
   repository: string
   default_branch: string
