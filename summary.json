@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-05-16T10:09:35.502Z",
+  "generated_at": "2026-05-16T10:09:54.481Z",
   "repository": "kitsuyui/gh-build-size",
   "default_branch": "main",
   "publish_branch": "gh-build-size-assets",
   "event_name": "push",
   "base_label": "main",
-  "base_reference": "c0b308dcd745fe750b7b52c4b6d93e91a52b6959",
+  "base_reference": "692ac411d939b6630add6cd441543dfa1a415ddf",
   "head_label": "main",
-  "head_reference": "692ac411d939b6630add6cd441543dfa1a415ddf",
+  "head_reference": "91cbc02da1b249804ba84f6013f901879c566da9",
   "targets": [
     {
       "id": "total",
@@ -24,20 +24,20 @@
         "raw": {
           "enabled": true,
           "current": 4310489,
-          "base": 4310277,
-          "delta": 212
+          "base": 4310489,
+          "delta": 0
         },
         "gzip": {
           "enabled": true,
           "current": 952161,
-          "base": 952120,
-          "delta": 41
+          "base": 952161,
+          "delta": 0
         },
         "brotli": {
           "enabled": true,
           "current": 757288,
-          "base": 757484,
-          "delta": -196
+          "base": 757288,
+          "delta": 0
         }
       },
       "violations": [],
@@ -57,30 +57,23 @@
         "raw": {
           "enabled": true,
           "current": 1557618,
-          "base": 1557531,
-          "delta": 87
+          "base": 1557618,
+          "delta": 0
         },
         "gzip": {
           "enabled": true,
           "current": 348470,
-          "base": 348451,
-          "delta": 19
+          "base": 348470,
+          "delta": 0
         },
         "brotli": {
           "enabled": true,
           "current": 276101,
-          "base": 276231,
-          "delta": -130
+          "base": 276101,
+          "delta": 0
         }
       },
-      "violations": [
-        {
-          "compression": "gzip",
-          "kind": "no_increase",
-          "message": "348470 B increased from 348451 B",
-          "fail": false
-        }
-      ],
+      "violations": [],
       "badge_path": ".gh-build-size/badges/runtime.svg",
       "target_path": ".gh-build-size/targets/runtime.json"
     },
@@ -97,20 +90,20 @@
         "raw": {
           "enabled": true,
           "current": 2752860,
-          "base": 2752735,
-          "delta": 125
+          "base": 2752860,
+          "delta": 0
         },
         "gzip": {
           "enabled": true,
           "current": 603660,
-          "base": 603638,
-          "delta": 22
+          "base": 603660,
+          "delta": 0
         },
         "brotli": {
           "enabled": true,
           "current": 481172,
-          "base": 481238,
-          "delta": -66
+          "base": 481172,
+          "delta": 0
         }
       },
       "violations": [],
