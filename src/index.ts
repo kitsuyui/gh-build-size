@@ -149,11 +149,7 @@ async function run(): Promise<void> {
         label: target.label,
         files: target.files.map((filePath) => ({
           path: filePath,
-          sizes: {
-            raw: 0,
-            gzip: 0,
-            brotli: 0,
-          },
+          sizes: null,
         })),
         totals: {
           raw: target.sizes.raw.current,

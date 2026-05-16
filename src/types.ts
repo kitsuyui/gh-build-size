@@ -89,7 +89,8 @@ export interface ActionInputs {
 
 export interface FileSnapshot {
   path: string
-  sizes: Record<Compression, number>
+  // null when per-file sizes are unavailable (e.g. reconstructed from a published summary)
+  sizes: Record<Compression, number> | null
 }
 
 export interface TargetSnapshot {
@@ -117,6 +118,8 @@ export interface SizeViolation {
 }
 
 export interface SizeValueStatus {
+  // false = this compression was not configured for this target (not a measurement of 0 bytes)
+  enabled: boolean
   current: number
   base: number | null
   delta: number | null
