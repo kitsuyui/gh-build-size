@@ -17,6 +17,8 @@ import type {
 
 type Octokit = ReturnType<typeof github.getOctokit>
 
+const PUBLISH_BRANCH_MAX_ATTEMPTS = 3
+
 function isPermissionError(error: unknown): boolean {
   if (
     typeof error === 'object' &&
@@ -25,6 +27,18 @@ function isPermissionError(error: unknown): boolean {
     typeof error.status === 'number'
   ) {
     return [401, 403, 404].includes(error.status)
+  }
+  return false
+}
+
+function isRefConflictError(error: unknown): boolean {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'status' in error &&
+    typeof error.status === 'number'
+  ) {
+    return [409, 422].includes(error.status)
   }
   return false
 }
@@ -165,7 +179,6 @@ export async function publishAssets(
 
   const branch = summary.publish_branch
   try {
-    const branchState = await ensureBranch(octokit, branch)
     const treeEntries = [
       {
         path: path.posix.join(
@@ -224,30 +237,46 @@ export async function publishAssets(
       })
     }
 
-    const tree = await octokit.rest.git.createTree({
-      ...github.context.repo,
-      tree: treeEntries,
-    })
-    const commit = await octokit.rest.git.createCommit({
-      ...github.context.repo,
-      message: 'Update gh-build-size assets',
-      tree: tree.data.sha,
-      parents: branchState.commitSha ? [branchState.commitSha] : [],
-    })
+    for (let attempt = 1; attempt <= PUBLISH_BRANCH_MAX_ATTEMPTS; attempt++) {
+      const branchState = await ensureBranch(octokit, branch)
+      const tree = await octokit.rest.git.createTree({
+        ...github.context.repo,
+        tree: treeEntries,
+      })
+      const commit = await octokit.rest.git.createCommit({
+        ...github.context.repo,
+        message: 'Update gh-build-size assets',
+        tree: tree.data.sha,
+        parents: branchState.commitSha ? [branchState.commitSha] : [],
+      })
 
-    if (branchState.commitSha) {
-      await octokit.rest.git.updateRef({
-        ...github.context.repo,
-        ref: `heads/${branch}`,
-        sha: commit.data.sha,
-        force: true,
-      })
-    } else {
-      await octokit.rest.git.createRef({
-        ...github.context.repo,
-        ref: `refs/heads/${branch}`,
-        sha: commit.data.sha,
-      })
+      try {
+        if (branchState.commitSha) {
+          await octokit.rest.git.updateRef({
+            ...github.context.repo,
+            ref: `heads/${branch}`,
+            sha: commit.data.sha,
+            force: false,
+          })
+        } else {
+          await octokit.rest.git.createRef({
+            ...github.context.repo,
+            ref: `refs/heads/${branch}`,
+            sha: commit.data.sha,
+          })
+        }
+        return
+      } catch (error) {
+        if (
+          !isRefConflictError(error) ||
+          attempt === PUBLISH_BRANCH_MAX_ATTEMPTS
+        ) {
+          throw error
+        }
+        core.warning(
+          `gh-build-size publish branch "${branch}" changed during publish; retrying with the latest branch tip.`,
+        )
+      }
     }
   } catch (error) {
     if (isPermissionError(error)) {

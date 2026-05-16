@@ -38476,8 +38476,9 @@ function workspacePackageTarget(resolver, packageDir) {
 async function expandResolvers(resolvers, workspaceRoot) {
 	const targets = [];
 	for (const resolver of resolvers) {
-		const packageJsonPaths = await (0, import_out.default)(path.posix.join(resolver.root, "*/package.json"), {
+		const packageJsonPaths = await (0, import_out.default)(path.posix.join(resolver.root, "**/package.json"), {
 			cwd: workspaceRoot,
+			ignore: ["**/node_modules/**"],
 			onlyFiles: true
 		});
 		for (const packageJsonPath of packageJsonPaths.sort()) {
@@ -39358,12 +39359,17 @@ ${rows}
 
 //#endregion
 //#region src/github.ts
+const PUBLISH_BRANCH_MAX_ATTEMPTS = 3;
 function isPermissionError(error) {
 	if (typeof error === "object" && error !== null && "status" in error && typeof error.status === "number") return [
 		401,
 		403,
 		404
 	].includes(error.status);
+	return false;
+}
+function isRefConflictError(error) {
+	if (typeof error === "object" && error !== null && "status" in error && typeof error.status === "number") return [409, 422].includes(error.status);
 	return false;
 }
 async function findManagedComment(octokit, marker) {
@@ -39441,7 +39447,6 @@ async function publishAssets(octokit, summary, filesSnapshot, targetStatuses, sn
 	if (!config.publish.enabled || !summary.publish_branch) return;
 	const branch = summary.publish_branch;
 	try {
-		const branchState = await ensureBranch(octokit, branch);
 		const treeEntries = [
 			{
 				path: path.posix.join(config.publish.directory, config.publish.summary_filename),
@@ -39479,27 +39484,36 @@ async function publishAssets(octokit, summary, filesSnapshot, targetStatuses, sn
 				content: `${JSON.stringify(snapshot, null, 2)}\n`
 			});
 		}
-		const tree = await octokit.rest.git.createTree({
-			...import_github.context.repo,
-			tree: treeEntries
-		});
-		const commit = await octokit.rest.git.createCommit({
-			...import_github.context.repo,
-			message: "Update gh-build-size assets",
-			tree: tree.data.sha,
-			parents: branchState.commitSha ? [branchState.commitSha] : []
-		});
-		if (branchState.commitSha) await octokit.rest.git.updateRef({
-			...import_github.context.repo,
-			ref: `heads/${branch}`,
-			sha: commit.data.sha,
-			force: true
-		});
-		else await octokit.rest.git.createRef({
-			...import_github.context.repo,
-			ref: `refs/heads/${branch}`,
-			sha: commit.data.sha
-		});
+		for (let attempt = 1; attempt <= PUBLISH_BRANCH_MAX_ATTEMPTS; attempt++) {
+			const branchState = await ensureBranch(octokit, branch);
+			const tree = await octokit.rest.git.createTree({
+				...import_github.context.repo,
+				tree: treeEntries
+			});
+			const commit = await octokit.rest.git.createCommit({
+				...import_github.context.repo,
+				message: "Update gh-build-size assets",
+				tree: tree.data.sha,
+				parents: branchState.commitSha ? [branchState.commitSha] : []
+			});
+			try {
+				if (branchState.commitSha) await octokit.rest.git.updateRef({
+					...import_github.context.repo,
+					ref: `heads/${branch}`,
+					sha: commit.data.sha,
+					force: false
+				});
+				else await octokit.rest.git.createRef({
+					...import_github.context.repo,
+					ref: `refs/heads/${branch}`,
+					sha: commit.data.sha
+				});
+				return;
+			} catch (error) {
+				if (!isRefConflictError(error) || attempt === PUBLISH_BRANCH_MAX_ATTEMPTS) throw error;
+				import_core.warning(`gh-build-size publish branch "${branch}" changed during publish; retrying with the latest branch tip.`);
+			}
+		}
 	} catch (error) {
 		if (isPermissionError(error)) {
 			import_core.warning(`gh-build-size skipped publish-branch updates because the workflow token cannot write branch "${branch}".`);
