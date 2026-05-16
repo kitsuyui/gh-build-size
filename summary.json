@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-05-08T13:12:34.399Z",
+  "generated_at": "2026-05-16T10:08:40.657Z",
   "repository": "kitsuyui/gh-build-size",
   "default_branch": "main",
   "publish_branch": "gh-build-size-assets",
   "event_name": "push",
   "base_label": "main",
-  "base_reference": "201b385b3e338f6e130bd8015597b6892380af32",
+  "base_reference": "00b81a2bbe2085ab8eb87462e88a822b6f541b84",
   "head_label": "main",
-  "head_reference": "00b81a2bbe2085ab8eb87462e88a822b6f541b84",
+  "head_reference": "cba00e55a823f1945adfd3d6b96116c0e4a81a6b",
   "targets": [
     {
       "id": "total",
@@ -22,19 +22,19 @@
       "commentable": true,
       "sizes": {
         "raw": {
-          "current": 4308524,
+          "current": 4310304,
           "base": 4308524,
-          "delta": 0
+          "delta": 1780
         },
         "gzip": {
-          "current": 951651,
+          "current": 952111,
           "base": 951651,
-          "delta": 0
+          "delta": 460
         },
         "brotli": {
-          "current": 757170,
+          "current": 757490,
           "base": 757170,
-          "delta": 0
+          "delta": 320
         }
       },
       "violations": [],
@@ -52,22 +52,29 @@
       "commentable": true,
       "sizes": {
         "raw": {
-          "current": 1556913,
+          "current": 1557539,
           "base": 1556913,
-          "delta": 0
+          "delta": 626
         },
         "gzip": {
-          "current": 348268,
+          "current": 348445,
           "base": 348268,
-          "delta": 0
+          "delta": 177
         },
         "brotli": {
-          "current": 276174,
+          "current": 276315,
           "base": 276174,
-          "delta": 0
+          "delta": 141
         }
       },
-      "violations": [],
+      "violations": [
+        {
+          "compression": "gzip",
+          "kind": "no_increase",
+          "message": "348445 B increased from 348268 B",
+          "fail": false
+        }
+      ],
       "badge_path": ".gh-build-size/badges/runtime.svg",
       "target_path": ".gh-build-size/targets/runtime.json"
     },
@@ -82,19 +89,19 @@
       "commentable": true,
       "sizes": {
         "raw": {
-          "current": 2751600,
+          "current": 2752754,
           "base": 2751600,
-          "delta": 0
+          "delta": 1154
         },
         "gzip": {
-          "current": 603352,
+          "current": 603635,
           "base": 603352,
-          "delta": 0
+          "delta": 283
         },
         "brotli": {
-          "current": 480981,
+          "current": 481160,
           "base": 480981,
-          "delta": 0
+          "delta": 179
         }
       },
       "violations": [],
