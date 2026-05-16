@@ -39367,6 +39367,11 @@ mustache.Writer = Writer;
 
 //#endregion
 //#region src/comment.ts
+const commentCompressions = [
+	"raw",
+	"gzip",
+	"brotli"
+];
 function formatBytes$1(value) {
 	if (value === null) return "n/a";
 	return `${value.toLocaleString("en-US")} B`;
@@ -39379,13 +39384,28 @@ function formatDelta(value) {
 function buildMarker(key) {
 	return `<!-- gh-build-size:${key} -->`;
 }
+function selectCommentSize(target) {
+	for (const compression of commentCompressions) {
+		const size = target.sizes[compression];
+		if (size.base !== null || size.current > 0) return {
+			compression,
+			size
+		};
+	}
+	return null;
+}
 function renderComment(summary, template, marker) {
-	const rows = summary.targets.filter((target) => target.commentable).filter((target) => target.sizes.raw.base !== null || target.sizes.raw.current > 0).map((target) => ({
-		label: `\`${target.label}\``,
-		base: formatBytes$1(target.sizes.raw.base),
-		current: formatBytes$1(target.sizes.raw.current),
-		delta: formatDelta(target.sizes.raw.delta)
-	}));
+	const rows = summary.targets.filter((target) => target.commentable).flatMap((target) => {
+		const selected = selectCommentSize(target);
+		if (!selected) return [];
+		const compressionLabel = selected.compression === "raw" ? "" : ` (${selected.compression})`;
+		return [{
+			label: `\`${target.label}\`${compressionLabel}`,
+			base: formatBytes$1(selected.size.base),
+			current: formatBytes$1(selected.size.current),
+			delta: formatDelta(selected.size.delta)
+		}];
+	});
 	const violations = summary.targets.flatMap((target) => target.violations.map((violation) => ({
 		label: target.label,
 		compression: violation.compression,

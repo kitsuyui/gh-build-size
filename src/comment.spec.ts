@@ -92,4 +92,23 @@ describe('comment', () => {
     expect(body).not.toContain('### Initial measurement')
     expect(body).toContain('| `web` | n&#x2F;a | 120 B | n&#x2F;a |')
   })
+
+  test('renders compressed-only targets in the markdown table', () => {
+    const body = renderComment(
+      {
+        ...summary,
+        targets: summary.targets.map((target) => ({
+          ...target,
+          sizes: {
+            raw: { current: 0, base: null, delta: null },
+            gzip: { current: 60, base: 50, delta: 10 },
+            brotli: { current: 0, base: null, delta: null },
+          },
+        })),
+      },
+      DEFAULT_COMMENT_TEMPLATE,
+      buildMarker('default'),
+    )
+    expect(body).toContain('| `web` (gzip) | 50 B | 60 B | +10 B |')
+  })
 })

@@ -1,6 +1,8 @@
 import Mustache from 'mustache'
 
-import type { SummaryStatus } from './types'
+import type { Compression, SummaryStatus } from './types'
+
+const commentCompressions: Compression[] = ['raw', 'gzip', 'brotli']
 
 function formatBytes(value: number | null): string {
   if (value === null) {
@@ -24,6 +26,19 @@ export function buildMarker(key: string): string {
   return `<!-- gh-build-size:${key} -->`
 }
 
+function selectCommentSize(target: SummaryStatus['targets'][number]): {
+  compression: Compression
+  size: SummaryStatus['targets'][number]['sizes'][Compression]
+} | null {
+  for (const compression of commentCompressions) {
+    const size = target.sizes[compression]
+    if (size.base !== null || size.current > 0) {
+      return { compression, size }
+    }
+  }
+  return null
+}
+
 export function renderComment(
   summary: SummaryStatus,
   template: string,
@@ -31,16 +46,22 @@ export function renderComment(
 ): string {
   const rows = summary.targets
     .filter((target) => target.commentable)
-    .filter(
-      (target) =>
-        target.sizes.raw.base !== null || target.sizes.raw.current > 0,
-    )
-    .map((target) => ({
-      label: `\`${target.label}\``,
-      base: formatBytes(target.sizes.raw.base),
-      current: formatBytes(target.sizes.raw.current),
-      delta: formatDelta(target.sizes.raw.delta),
-    }))
+    .flatMap((target) => {
+      const selected = selectCommentSize(target)
+      if (!selected) {
+        return []
+      }
+      const compressionLabel =
+        selected.compression === 'raw' ? '' : ` (${selected.compression})`
+      return [
+        {
+          label: `\`${target.label}\`${compressionLabel}`,
+          base: formatBytes(selected.size.base),
+          current: formatBytes(selected.size.current),
+          delta: formatDelta(selected.size.delta),
+        },
+      ]
+    })
   const violations = summary.targets.flatMap((target) =>
     target.violations.map((violation) => ({
       label: target.label,
