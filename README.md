@@ -169,6 +169,34 @@ branch:
 `targets/<target>.json` preserve measured file names plus size data so later
 tools can regroup or re-render the snapshot without rerunning an old build.
 
+## Action outputs
+
+The action sets these step outputs after it runs:
+
+| Output | Type | Description |
+| --- | --- | --- |
+| `summary-path` | `string` | Path to the generated summary JSON file |
+| `summary-json` | `string` | The generated summary JSON (serialised) |
+| `files-path` | `string` | Path to the generated files snapshot JSON |
+| `report-path` | `string` | Path to the generated report Markdown |
+| `violation-count` | `string` | Number of target/compression pairs that violated a failing condition |
+| `has-violations` | `string` | `"true"` if any failing condition was violated, `"false"` otherwise |
+| `publish-branch` | `string` | The publish branch used for generated assets (`""` when publishing is disabled) |
+
+Example — upload the report as an artifact:
+
+```yaml
+- uses: kitsuyui/gh-build-size@v0
+  id: size
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+
+- uses: actions/upload-artifact@v4
+  with:
+    name: build-size-report
+    path: ${{ steps.size.outputs.report-path }}
+```
+
 ## Requirements
 
 - run your build step before `gh-build-size`
