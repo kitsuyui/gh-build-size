@@ -23,9 +23,9 @@ const summary: SummaryStatus = {
       baseline_missing: false,
       commentable: true,
       sizes: {
-        raw: { current: 120, base: 100, delta: 20 },
-        gzip: { current: 60, base: 50, delta: 10 },
-        brotli: { current: 55, base: 45, delta: 10 },
+        raw: { enabled: true, current: 120, base: 100, delta: 20 },
+        gzip: { enabled: true, current: 60, base: 50, delta: 10 },
+        brotli: { enabled: true, current: 55, base: 45, delta: 10 },
       },
       violations: [
         {
@@ -79,9 +79,9 @@ describe('comment', () => {
           touched_files: [],
           sizes: {
             ...target.sizes,
-            raw: { current: 120, base: null, delta: null },
-            gzip: { current: 60, base: null, delta: null },
-            brotli: { current: 55, base: null, delta: null },
+            raw: { enabled: true, current: 120, base: null, delta: null },
+            gzip: { enabled: true, current: 60, base: null, delta: null },
+            brotli: { enabled: true, current: 55, base: null, delta: null },
           },
         })),
       },

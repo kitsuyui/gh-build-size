@@ -69,6 +69,7 @@ export function evaluateTargets(
     const violations = buildViolations(target, current, base)
     const sizes = {
       raw: {
+        enabled: true,
         current: current.totals.raw,
         base: base?.totals.raw ?? null,
         delta:
@@ -77,6 +78,7 @@ export function evaluateTargets(
             : current.totals.raw - base.totals.raw,
       },
       gzip: {
+        enabled: true,
         current: current.totals.gzip,
         base: base?.totals.gzip ?? null,
         delta:
@@ -85,6 +87,7 @@ export function evaluateTargets(
             : current.totals.gzip - base.totals.gzip,
       },
       brotli: {
+        enabled: true,
         current: current.totals.brotli,
         base: base?.totals.brotli ?? null,
         delta:
@@ -97,6 +100,7 @@ export function evaluateTargets(
     for (const compression of compressions) {
       if (!target.compressions.includes(compression)) {
         sizes[compression] = {
+          enabled: false,
           current: 0,
           base: null,
           delta: null,

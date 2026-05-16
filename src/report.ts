@@ -6,9 +6,10 @@ function formatBytes(value: number): string {
 
 export function renderReportMarkdown(snapshot: FilesSnapshot): string {
   const rows = snapshot.files
-    .map(
-      (file) =>
-        `| \`${file.path}\` | ${formatBytes(file.sizes.raw)} | ${formatBytes(file.sizes.gzip)} | ${formatBytes(file.sizes.brotli)} |`,
+    .map((file) =>
+      file.sizes
+        ? `| \`${file.path}\` | ${formatBytes(file.sizes.raw)} | ${formatBytes(file.sizes.gzip)} | ${formatBytes(file.sizes.brotli)} |`
+        : `| \`${file.path}\` | N/A | N/A | N/A |`,
     )
     .join('\n')
 
