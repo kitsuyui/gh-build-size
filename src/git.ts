@@ -67,7 +67,7 @@ export function createGitRevisionReader(): RevisionReader {
         ['show', `${revision}:${filePath}`],
         {
           encoding: 'buffer',
-          maxBuffer: 32 * 1024 * 1024,
+          maxBuffer: Infinity,
         },
       )
       return Buffer.from(stdout)
