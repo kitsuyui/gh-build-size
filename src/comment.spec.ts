@@ -5,6 +5,7 @@ import { DEFAULT_COMMENT_TEMPLATE } from './config'
 import type { SummaryStatus } from './types'
 
 const summary: SummaryStatus = {
+  schema_version: 1,
   generated_at: '2026-04-12T00:00:00.000Z',
   repository: 'kitsuyui/gh-build-size',
   default_branch: 'main',

@@ -111,6 +111,10 @@ the run as an initial measurement and can comment on the pull request.
 
 ## Configuration model
 
+The configuration `version` field is currently `1`. Future incompatible
+configuration changes can use that field for explicit migration or rejection
+instead of silently interpreting unknown versions as the current schema.
+
 Each target represents one reported unit such as a bundle, package, or artifact
 group.
 
@@ -168,6 +172,8 @@ branch:
 `summary.json` is the compact view for quick inspection. `files.json` and
 `targets/<target>.json` preserve measured file names plus size data so later
 tools can regroup or re-render the snapshot without rerunning an old build.
+Each JSON file includes `schema_version` so future readers can reject or migrate
+older published data intentionally.
 
 ## Action outputs
 

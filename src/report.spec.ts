@@ -4,6 +4,7 @@ import { renderReportMarkdown } from './report'
 import type { FilesSnapshot } from './types'
 
 const snapshot: FilesSnapshot = {
+  schema_version: 1,
   generated_at: '2026-04-12T00:00:00.000Z',
   repository: 'kitsuyui/gh-build-size',
   default_branch: 'main',

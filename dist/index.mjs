@@ -38188,12 +38188,85 @@ var require_dist = /* @__PURE__ */ __commonJSMin(((exports) => {
 }));
 
 //#endregion
-//#region src/config.ts
+//#region src/schema.ts
+var import_dist = /* @__PURE__ */ __toESM(require_dist(), 1);
+var import_out = /* @__PURE__ */ __toESM(require_out(), 1);
+var import_ajv = /* @__PURE__ */ __toESM(require_ajv(), 1);
 var import_github = /* @__PURE__ */ __toESM(require_github(), 1);
 var import_core = /* @__PURE__ */ __toESM(require_core$2(), 1);
-var import_ajv = /* @__PURE__ */ __toESM(require_ajv(), 1);
-var import_out = /* @__PURE__ */ __toESM(require_out(), 1);
-var import_dist = /* @__PURE__ */ __toESM(require_dist(), 1);
+const CONFIG_SCHEMA_VERSION = 1;
+const PUBLISHED_SCHEMA_VERSION = 1;
+const compressions$2 = [
+	"raw",
+	"gzip",
+	"brotli"
+];
+const violationKinds = ["limit", "no_increase"];
+function isRecord(value) {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function isStringArray(value) {
+	return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+function isNullableString(value) {
+	return value === null || typeof value === "string";
+}
+function readPublishedSchemaVersion(value) {
+	if (value.schema_version === void 0) return PUBLISHED_SCHEMA_VERSION;
+	return value.schema_version === PUBLISHED_SCHEMA_VERSION ? PUBLISHED_SCHEMA_VERSION : null;
+}
+function normalizeSizeValueStatus(value) {
+	if (!isRecord(value)) return null;
+	if (typeof value.current !== "number" || value.base !== null && typeof value.base !== "number" || value.delta !== null && typeof value.delta !== "number") return null;
+	return {
+		enabled: typeof value.enabled === "boolean" ? value.enabled : value.current > 0,
+		current: value.current,
+		base: value.base,
+		delta: value.delta
+	};
+}
+function normalizeTargetSizes(value) {
+	if (!isRecord(value)) return null;
+	const sizes = Object.fromEntries(compressions$2.map((compression) => [compression, normalizeSizeValueStatus(value[compression])]));
+	if (compressions$2.some((compression) => sizes[compression] === null)) return null;
+	return sizes;
+}
+function isSizeViolation(value) {
+	if (!isRecord(value)) return false;
+	return compressions$2.includes(value.compression) && violationKinds.includes(value.kind) && typeof value.message === "string" && typeof value.fail === "boolean";
+}
+function normalizeTargetStatus(value) {
+	if (!isRecord(value)) return null;
+	const sizes = normalizeTargetSizes(value.sizes);
+	if (typeof value.id !== "string" || typeof value.label !== "string" || !isStringArray(value.files) || !isStringArray(value.touched_files) || typeof value.baseline_missing !== "boolean" || typeof value.commentable !== "boolean" || sizes === null || !Array.isArray(value.violations) || !value.violations.every(isSizeViolation) || typeof value.badge_path !== "string" || typeof value.target_path !== "string") return null;
+	return {
+		id: value.id,
+		label: value.label,
+		files: value.files,
+		touched_files: value.touched_files,
+		baseline_missing: value.baseline_missing,
+		commentable: value.commentable,
+		sizes,
+		violations: value.violations,
+		badge_path: value.badge_path,
+		target_path: value.target_path
+	};
+}
+function normalizePublishedSummary(value) {
+	if (!isRecord(value)) return null;
+	const schemaVersion = readPublishedSchemaVersion(value);
+	if (schemaVersion === null) return null;
+	const targets = Array.isArray(value.targets) ? value.targets.map(normalizeTargetStatus) : null;
+	if (typeof value.generated_at !== "string" || typeof value.repository !== "string" || typeof value.default_branch !== "string" || !isNullableString(value.publish_branch) || typeof value.event_name !== "string" || typeof value.base_label !== "string" || !isNullableString(value.base_reference) || typeof value.head_label !== "string" || typeof value.head_reference !== "string" || targets === null || targets.some((target) => target === null)) return null;
+	return {
+		...value,
+		schema_version: schemaVersion,
+		targets
+	};
+}
+
+//#endregion
+//#region src/config.ts
 const compressions$1 = [
 	"raw",
 	"gzip",
@@ -38222,7 +38295,10 @@ const schema = {
 	type: "object",
 	additionalProperties: false,
 	properties: {
-		version: { type: "integer" },
+		version: {
+			type: "integer",
+			const: CONFIG_SCHEMA_VERSION
+		},
 		default_branch: { type: "string" },
 		comment: {
 			type: "object",
@@ -38552,22 +38628,26 @@ function evaluateTargets(config, currentSnapshots, baseSnapshots, touchedFilesBy
 		const violations = buildViolations(target, current, base);
 		const sizes = {
 			raw: {
+				enabled: true,
 				current: current.totals.raw,
 				base: base?.totals.raw ?? null,
 				delta: base?.totals.raw === void 0 ? null : current.totals.raw - base.totals.raw
 			},
 			gzip: {
+				enabled: true,
 				current: current.totals.gzip,
 				base: base?.totals.gzip ?? null,
 				delta: base?.totals.gzip === void 0 ? null : current.totals.gzip - base.totals.gzip
 			},
 			brotli: {
+				enabled: true,
 				current: current.totals.brotli,
 				base: base?.totals.brotli ?? null,
 				delta: base?.totals.brotli === void 0 ? null : current.totals.brotli - base.totals.brotli
 			}
 		};
 		for (const compression of compressions) if (!target.compressions.includes(compression)) sizes[compression] = {
+			enabled: false,
 			current: 0,
 			base: null,
 			delta: null
@@ -38641,7 +38721,7 @@ function createGitRevisionReader() {
 		async readFile(revision, filePath) {
 			const { stdout } = await execFileAsync("git", ["show", `${revision}:${filePath}`], {
 				encoding: "buffer",
-				maxBuffer: 32 * 1024 * 1024
+				maxBuffer: Infinity
 			});
 			return Buffer.from(stdout);
 		}
@@ -39344,7 +39424,7 @@ function formatBytes(value) {
 	return `${value.toLocaleString("en-US")} B`;
 }
 function renderReportMarkdown(snapshot) {
-	const rows = snapshot.files.map((file) => `| \`${file.path}\` | ${formatBytes(file.sizes.raw)} | ${formatBytes(file.sizes.gzip)} | ${formatBytes(file.sizes.brotli)} |`).join("\n");
+	const rows = snapshot.files.map((file) => file.sizes ? `| \`${file.path}\` | ${formatBytes(file.sizes.raw)} | ${formatBytes(file.sizes.gzip)} | ${formatBytes(file.sizes.brotli)} |` : `| \`${file.path}\` | N/A | N/A | N/A |`).join("\n");
 	return `# gh-build-size report
 
 - Repository: **${snapshot.repository}**
@@ -39415,7 +39495,7 @@ async function updatePullRequestComment(octokit, summary, config) {
 		throw error;
 	}
 }
-async function fetchPublishedJson(octokit, branch, filename) {
+async function fetchPublishedJson(octokit, branch, filename, normalize) {
 	try {
 		const response = await octokit.rest.repos.getContent({
 			...import_github.context.repo,
@@ -39423,14 +39503,19 @@ async function fetchPublishedJson(octokit, branch, filename) {
 			ref: branch
 		});
 		if (!("content" in response.data) || typeof response.data.content !== "string") return null;
-		return JSON.parse(Buffer.from(response.data.content, "base64").toString("utf8"));
+		const normalized = normalize(JSON.parse(Buffer.from(response.data.content, "base64").toString("utf8")));
+		if (normalized === null) {
+			import_core.warning(`gh-build-size ignored published JSON "${filename}" on branch "${branch}" because it does not match a supported schema.`);
+			return null;
+		}
+		return normalized;
 	} catch (error) {
 		if (isPermissionError(error)) return null;
 		throw error;
 	}
 }
 async function fetchPublishedSummary(octokit, branch, summaryFilename) {
-	return fetchPublishedJson(octokit, branch, summaryFilename);
+	return fetchPublishedJson(octokit, branch, summaryFilename, normalizePublishedSummary);
 }
 async function ensureBranch(octokit, branch) {
 	try {
@@ -39598,6 +39683,7 @@ async function measureWorkspaceTargets(targets) {
 	return Promise.all(targets.map(async (target) => {
 		const measured = await measureFiles(await filesForWorkspace(target), target.compressions, (filePath) => fs.readFile(filePath));
 		return {
+			schema_version: PUBLISHED_SCHEMA_VERSION,
 			id: target.id,
 			label: target.label,
 			files: measured.files,
@@ -39610,6 +39696,7 @@ async function measureRevisionTargets(revision, targets, reader) {
 	return Promise.all(targets.map(async (target) => {
 		const measured = await measureFiles(filesForRevision(revisionFiles, target), target.compressions, (filePath) => reader.readFile(revision, filePath));
 		return {
+			schema_version: PUBLISHED_SCHEMA_VERSION,
 			id: target.id,
 			label: target.label,
 			files: measured.files,
@@ -39635,6 +39722,7 @@ function attachOutputPaths(summary, outputDir) {
 }
 function buildSummary(defaultBranch, publishBranch, baseLabel, baseReference, headLabel, headReference, targets) {
 	return {
+		schema_version: PUBLISHED_SCHEMA_VERSION,
 		generated_at: (/* @__PURE__ */ new Date()).toISOString(),
 		repository: import_github.context.payload.repository?.full_name ?? "",
 		default_branch: defaultBranch,
@@ -39651,6 +39739,7 @@ function buildFilesSnapshot(defaultBranch, publishBranch, headReference, snapsho
 	const files = /* @__PURE__ */ new Map();
 	for (const snapshot of snapshots) for (const file of snapshot.files) files.set(file.path, file);
 	return {
+		schema_version: PUBLISHED_SCHEMA_VERSION,
 		generated_at: (/* @__PURE__ */ new Date()).toISOString(),
 		repository: import_github.context.payload.repository?.full_name ?? "",
 		default_branch: defaultBranch,
@@ -39690,11 +39779,7 @@ async function run() {
 			label: target.label,
 			files: target.files.map((filePath) => ({
 				path: filePath,
-				sizes: {
-					raw: 0,
-					gzip: 0,
-					brotli: 0
-				}
+				sizes: null
 			})),
 			totals: {
 				raw: target.sizes.raw.current,

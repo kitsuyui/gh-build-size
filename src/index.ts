@@ -18,6 +18,7 @@ import {
   writeOutputFiles,
 } from './github'
 import { measureRevisionTargets, measureWorkspaceTargets } from './measure'
+import { PUBLISHED_SCHEMA_VERSION } from './schema'
 
 import type { FilesSnapshot, SummaryStatus } from './types'
 
@@ -51,6 +52,7 @@ function buildSummary(
   targets: SummaryStatus['targets'],
 ): SummaryStatus {
   return {
+    schema_version: PUBLISHED_SCHEMA_VERSION,
     generated_at: new Date().toISOString(),
     repository: github.context.payload.repository?.full_name ?? '',
     default_branch: defaultBranch,
@@ -79,6 +81,7 @@ function buildFilesSnapshot(
   }
 
   return {
+    schema_version: PUBLISHED_SCHEMA_VERSION,
     generated_at: new Date().toISOString(),
     repository: github.context.payload.repository?.full_name ?? '',
     default_branch: defaultBranch,

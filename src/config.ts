@@ -4,7 +4,7 @@ import * as core from '@actions/core'
 import Ajv from 'ajv'
 import fg from 'fast-glob'
 import YAML from 'yaml'
-
+import { CONFIG_SCHEMA_VERSION } from './schema'
 import type {
   ActionConfig,
   ActionInputs,
@@ -38,7 +38,7 @@ const schema = {
   type: 'object',
   additionalProperties: false,
   properties: {
-    version: { type: 'integer' },
+    version: { type: 'integer', const: CONFIG_SCHEMA_VERSION },
     default_branch: { type: 'string' },
     comment: {
       type: 'object',

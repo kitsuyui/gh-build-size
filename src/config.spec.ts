@@ -3,9 +3,51 @@ import os from 'node:os'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 
-import { DEFAULT_COMMENT_TEMPLATE, normalizeConfig } from './config'
+import { DEFAULT_COMMENT_TEMPLATE, loadConfig, normalizeConfig } from './config'
 
 describe('normalizeConfig', () => {
+  test('loads config schema version 1', async () => {
+    const workspaceRoot = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'gh-build-size-config-version-'),
+    )
+    const configPath = path.join(workspaceRoot, 'gh-build-size.yml')
+    await fs.writeFile(
+      configPath,
+      [
+        'version: 1',
+        'targets:',
+        '  - id: web',
+        '    files:',
+        '      - dist/**/*.js',
+        '',
+      ].join('\n'),
+    )
+
+    await expect(loadConfig(configPath)).resolves.toMatchObject({
+      version: 1,
+    })
+  })
+
+  test('rejects unsupported config schema versions', async () => {
+    const workspaceRoot = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'gh-build-size-config-version-'),
+    )
+    const configPath = path.join(workspaceRoot, 'gh-build-size.yml')
+    await fs.writeFile(
+      configPath,
+      [
+        'version: 2',
+        'targets:',
+        '  - id: web',
+        '    files:',
+        '      - dist/**/*.js',
+        '',
+      ].join('\n'),
+    )
+
+    await expect(loadConfig(configPath)).rejects.toThrow('Invalid config')
+  })
+
   test('fills defaults', async () => {
     const config = await normalizeConfig(
       {

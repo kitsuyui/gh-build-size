@@ -6,6 +6,7 @@ import * as github from '@actions/github'
 import { renderBadge } from './badge'
 import { buildMarker, decideCommentAction, renderComment } from './comment'
 import { renderReportMarkdown } from './report'
+import { normalizePublishedSummary } from './schema'
 
 import type {
   FilesSnapshot,
@@ -113,6 +114,7 @@ async function fetchPublishedJson<T>(
   octokit: Octokit,
   branch: string,
   filename: string,
+  normalize: (value: unknown) => T | null,
 ): Promise<T | null> {
   try {
     const response = await octokit.rest.repos.getContent({
@@ -126,9 +128,17 @@ async function fetchPublishedJson<T>(
     ) {
       return null
     }
-    return JSON.parse(
+    const parsed = JSON.parse(
       Buffer.from(response.data.content, 'base64').toString('utf8'),
-    ) as T
+    )
+    const normalized = normalize(parsed)
+    if (normalized === null) {
+      core.warning(
+        `gh-build-size ignored published JSON "${filename}" on branch "${branch}" because it does not match a supported schema.`,
+      )
+      return null
+    }
+    return normalized
   } catch (error) {
     if (isPermissionError(error)) {
       return null
@@ -142,7 +152,12 @@ export async function fetchPublishedSummary(
   branch: string,
   summaryFilename: string,
 ): Promise<SummaryStatus | null> {
-  return fetchPublishedJson<SummaryStatus>(octokit, branch, summaryFilename)
+  return fetchPublishedJson<SummaryStatus>(
+    octokit,
+    branch,
+    summaryFilename,
+    normalizePublishedSummary,
+  )
 }
 
 async function ensureBranch(

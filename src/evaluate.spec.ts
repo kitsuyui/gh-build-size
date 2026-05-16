@@ -32,6 +32,7 @@ const config: NormalizedConfig = {
 
 const currentSnapshots: TargetSnapshot[] = [
   {
+    schema_version: 1,
     id: 'web',
     label: 'web',
     files: [
@@ -54,6 +55,7 @@ const currentSnapshots: TargetSnapshot[] = [
 
 const baseSnapshots: TargetSnapshot[] = [
   {
+    schema_version: 1,
     id: 'web',
     label: 'web',
     files: [],
