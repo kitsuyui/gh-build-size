@@ -1,4 +1,5 @@
 {
+  "schema_version": 1,
   "id": "total",
   "label": "Total dist",
   "files": [
@@ -13,23 +14,23 @@
     {
       "path": "dist/index.mjs",
       "sizes": {
-        "raw": 1557618,
-        "gzip": 348470,
-        "brotli": 276101
+        "raw": 1561455,
+        "gzip": 349306,
+        "brotli": 277083
       }
     },
     {
       "path": "dist/index.mjs.map",
       "sizes": {
-        "raw": 2752860,
-        "gzip": 603660,
-        "brotli": 481172
+        "raw": 2764940,
+        "gzip": 606007,
+        "brotli": 483271
       }
     }
   ],
   "totals": {
-    "raw": 4310489,
-    "gzip": 952161,
-    "brotli": 757288
+    "raw": 4326406,
+    "gzip": 955344,
+    "brotli": 760369
   }
 }
