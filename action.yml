@@ -32,6 +32,10 @@ outputs:
     description: 'Path to the generated summary JSON file'
   summary-json:
     description: 'The generated summary JSON'
+  files-path:
+    description: 'Path to the generated files snapshot JSON'
+  report-path:
+    description: 'Path to the generated report Markdown file'
   violation-count:
     description: 'Number of target/compression pairs with failing conditions'
   has-violations:
