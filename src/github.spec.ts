@@ -1,7 +1,8 @@
 import * as core from '@actions/core'
+import * as github from '@actions/github'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 
-import { publishAssets } from './github'
+import { publishAssets, updatePullRequestComment } from './github'
 
 import type { FilesSnapshot, NormalizedConfig, SummaryStatus } from './types'
 
@@ -21,6 +22,7 @@ vi.mock('@actions/github', () => ({
 }))
 
 const summary: SummaryStatus = {
+  schema_version: 1,
   generated_at: '2026-05-16T00:00:00.000Z',
   repository: 'kitsuyui/gh-build-size',
   default_branch: 'main',
@@ -34,6 +36,7 @@ const summary: SummaryStatus = {
 }
 
 const filesSnapshot: FilesSnapshot = {
+  schema_version: 1,
   generated_at: '2026-05-16T00:00:00.000Z',
   repository: 'kitsuyui/gh-build-size',
   default_branch: 'main',
@@ -64,6 +67,7 @@ const config: NormalizedConfig = {
 
 function createOctokit() {
   return {
+    paginate: vi.fn(),
     rest: {
       git: {
         getRef: vi.fn(),
@@ -72,24 +76,87 @@ function createOctokit() {
         updateRef: vi.fn(),
         createRef: vi.fn(),
       },
+      issues: {
+        listComments: vi.fn(),
+        createComment: vi.fn(),
+        updateComment: vi.fn(),
+        deleteComment: vi.fn(),
+      },
     },
-  } as unknown as Parameters<typeof publishAssets>[0]
+  } as unknown as Parameters<typeof publishAssets>[0] &
+    Parameters<typeof updatePullRequestComment>[0]
+}
+
+function mockFn(fn: unknown): ReturnType<typeof vi.fn> {
+  return fn as ReturnType<typeof vi.fn>
+}
+
+function createCommentableSummary(): SummaryStatus {
+  return {
+    ...summary,
+    publish_branch: null,
+    event_name: 'pull_request',
+    head_label: '#123',
+    targets: [
+      {
+        id: 'web',
+        label: 'web',
+        files: ['dist/app.js'],
+        touched_files: ['dist/app.js'],
+        baseline_missing: false,
+        commentable: true,
+        sizes: {
+          raw: {
+            enabled: true,
+            current: 120,
+            base: 100,
+            delta: 20,
+          },
+          gzip: {
+            enabled: true,
+            current: 60,
+            base: 50,
+            delta: 10,
+          },
+          brotli: {
+            enabled: true,
+            current: 55,
+            base: 45,
+            delta: 10,
+          },
+        },
+        violations: [],
+        badge_path: '.gh-build-size/badges/web.svg',
+        target_path: '.gh-build-size/targets/web.json',
+      },
+    ],
+  }
+}
+
+const commentConfig: NormalizedConfig = {
+  ...config,
+  comment: {
+    enabled: true,
+    key: 'gh-build-size',
+    template: '{{{marker}}}\nupdated body',
+  },
 }
 
 describe('publishAssets', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    github.context.payload = {}
   })
 
   test('updates an existing publish branch without force', async () => {
     const octokit = createOctokit()
-    vi.mocked(octokit.rest.git.getRef).mockResolvedValue({
+    mockFn(octokit.rest.git.getRef).mockResolvedValue({
       data: { object: { sha: 'old-tip' } },
     } as Awaited<ReturnType<typeof octokit.rest.git.getRef>>)
-    vi.mocked(octokit.rest.git.createTree).mockResolvedValue({
+    mockFn(octokit.rest.git.createTree).mockResolvedValue({
       data: { sha: 'tree' },
     } as Awaited<ReturnType<typeof octokit.rest.git.createTree>>)
-    vi.mocked(octokit.rest.git.createCommit).mockResolvedValue({
+    mockFn(octokit.rest.git.createCommit).mockResolvedValue({
       data: { sha: 'new-tip' },
     } as Awaited<ReturnType<typeof octokit.rest.git.createCommit>>)
 
@@ -111,28 +178,28 @@ describe('publishAssets', () => {
 
   test('retries publish branch updates after a ref conflict', async () => {
     const octokit = createOctokit()
-    vi.mocked(octokit.rest.git.getRef)
+    mockFn(octokit.rest.git.getRef)
       .mockResolvedValueOnce({
         data: { object: { sha: 'old-tip' } },
       } as Awaited<ReturnType<typeof octokit.rest.git.getRef>>)
       .mockResolvedValueOnce({
         data: { object: { sha: 'latest-tip' } },
       } as Awaited<ReturnType<typeof octokit.rest.git.getRef>>)
-    vi.mocked(octokit.rest.git.createTree)
+    mockFn(octokit.rest.git.createTree)
       .mockResolvedValueOnce({
         data: { sha: 'tree-1' },
       } as Awaited<ReturnType<typeof octokit.rest.git.createTree>>)
       .mockResolvedValueOnce({
         data: { sha: 'tree-2' },
       } as Awaited<ReturnType<typeof octokit.rest.git.createTree>>)
-    vi.mocked(octokit.rest.git.createCommit)
+    mockFn(octokit.rest.git.createCommit)
       .mockResolvedValueOnce({
         data: { sha: 'commit-1' },
       } as Awaited<ReturnType<typeof octokit.rest.git.createCommit>>)
       .mockResolvedValueOnce({
         data: { sha: 'commit-2' },
       } as Awaited<ReturnType<typeof octokit.rest.git.createCommit>>)
-    vi.mocked(octokit.rest.git.updateRef)
+    mockFn(octokit.rest.git.updateRef)
       .mockRejectedValueOnce({ status: 409 })
       .mockResolvedValueOnce(
         {} as Awaited<ReturnType<typeof octokit.rest.git.updateRef>>,
@@ -156,5 +223,64 @@ describe('publishAssets', () => {
     expect(core.warning).toHaveBeenCalledWith(
       'gh-build-size publish branch "gh-build-size" changed during publish; retrying with the latest branch tip.',
     )
+  })
+})
+
+describe('updatePullRequestComment', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    github.context.payload = { pull_request: { number: 123 } }
+  })
+
+  test('updates the first managed comment and deletes duplicate marker comments', async () => {
+    const octokit = createOctokit()
+    mockFn(octokit.paginate).mockResolvedValue([
+      { id: 1, body: '<!-- gh-build-size:gh-build-size -->\nold body' },
+      { id: 2, body: '<!-- gh-build-size:gh-build-size -->\nduplicate' },
+      { id: 3, body: 'unmanaged comment' },
+    ])
+
+    await updatePullRequestComment(
+      octokit,
+      createCommentableSummary(),
+      commentConfig,
+    )
+
+    expect(octokit.rest.issues.updateComment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        comment_id: 1,
+        body: '<!-- gh-build-size:gh-build-size -->\nupdated body',
+      }),
+    )
+    expect(octokit.rest.issues.deleteComment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        comment_id: 2,
+      }),
+    )
+    expect(octokit.rest.issues.createComment).not.toHaveBeenCalled()
+  })
+
+  test('rechecks comments before creating a new managed comment', async () => {
+    const octokit = createOctokit()
+    mockFn(octokit.paginate)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        { id: 4, body: '<!-- gh-build-size:gh-build-size -->\nraced body' },
+      ])
+
+    await updatePullRequestComment(
+      octokit,
+      createCommentableSummary(),
+      commentConfig,
+    )
+
+    expect(octokit.paginate).toHaveBeenCalledTimes(2)
+    expect(octokit.rest.issues.updateComment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        comment_id: 4,
+        body: '<!-- gh-build-size:gh-build-size -->\nupdated body',
+      }),
+    )
+    expect(octokit.rest.issues.createComment).not.toHaveBeenCalled()
   })
 })

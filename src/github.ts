@@ -19,6 +19,7 @@ import type {
 type Octokit = ReturnType<typeof github.getOctokit>
 
 const PUBLISH_BRANCH_MAX_ATTEMPTS = 3
+type ManagedComment = { id: number; body: string }
 
 function isPermissionError(error: unknown): boolean {
   if (
@@ -44,24 +45,37 @@ function isRefConflictError(error: unknown): boolean {
   return false
 }
 
-async function findManagedComment(
+async function findManagedComments(
   octokit: Octokit,
   marker: string,
-): Promise<{ id: number; body: string } | null> {
+): Promise<ManagedComment[]> {
   const issueNumber = github.context.payload.pull_request?.number
   if (!issueNumber) {
-    return null
+    return []
   }
   const comments = await octokit.paginate(octokit.rest.issues.listComments, {
     ...github.context.repo,
     issue_number: issueNumber,
     per_page: 100,
   })
-  const found = comments.find((comment) => comment.body?.includes(marker))
-  if (!found?.body) {
-    return null
+  return comments.flatMap((comment) => {
+    if (!comment.body?.includes(marker)) {
+      return []
+    }
+    return [{ id: comment.id, body: comment.body }]
+  })
+}
+
+async function deleteDuplicateManagedComments(
+  octokit: Octokit,
+  comments: ManagedComment[],
+): Promise<void> {
+  for (const comment of comments.slice(1)) {
+    await octokit.rest.issues.deleteComment({
+      ...github.context.repo,
+      comment_id: comment.id,
+    })
   }
-  return { id: found.id, body: found.body }
 }
 
 export async function updatePullRequestComment(
@@ -79,8 +93,13 @@ export async function updatePullRequestComment(
     : null
 
   try {
-    const existing = await findManagedComment(octokit, marker)
-    const action = decideCommentAction(existing, body)
+    let existingComments = await findManagedComments(octokit, marker)
+    let action = decideCommentAction(existingComments[0] ?? null, body)
+    if (action.type === 'create') {
+      existingComments = await findManagedComments(octokit, marker)
+      action = decideCommentAction(existingComments[0] ?? null, body)
+    }
+
     if (action.type === 'create') {
       await octokit.rest.issues.createComment({
         ...github.context.repo,
@@ -99,6 +118,7 @@ export async function updatePullRequestComment(
         comment_id: action.commentId,
       })
     }
+    await deleteDuplicateManagedComments(octokit, existingComments)
   } catch (error) {
     if (isPermissionError(error)) {
       core.warning(

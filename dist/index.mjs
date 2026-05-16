@@ -39472,19 +39472,26 @@ function isRefConflictError(error) {
 	if (typeof error === "object" && error !== null && "status" in error && typeof error.status === "number") return [409, 422].includes(error.status);
 	return false;
 }
-async function findManagedComment(octokit, marker) {
+async function findManagedComments(octokit, marker) {
 	const issueNumber = import_github.context.payload.pull_request?.number;
-	if (!issueNumber) return null;
-	const found = (await octokit.paginate(octokit.rest.issues.listComments, {
+	if (!issueNumber) return [];
+	return (await octokit.paginate(octokit.rest.issues.listComments, {
 		...import_github.context.repo,
 		issue_number: issueNumber,
 		per_page: 100
-	})).find((comment) => comment.body?.includes(marker));
-	if (!found?.body) return null;
-	return {
-		id: found.id,
-		body: found.body
-	};
+	})).flatMap((comment) => {
+		if (!comment.body?.includes(marker)) return [];
+		return [{
+			id: comment.id,
+			body: comment.body
+		}];
+	});
+}
+async function deleteDuplicateManagedComments(octokit, comments) {
+	for (const comment of comments.slice(1)) await octokit.rest.issues.deleteComment({
+		...import_github.context.repo,
+		comment_id: comment.id
+	});
 }
 async function updatePullRequestComment(octokit, summary, config) {
 	const issueNumber = import_github.context.payload.pull_request?.number;
@@ -39492,7 +39499,12 @@ async function updatePullRequestComment(octokit, summary, config) {
 	const marker = buildMarker(config.comment.key);
 	const body = summary.targets.some((target) => target.commentable) ? renderComment(summary, config.comment.template, marker) : null;
 	try {
-		const action = decideCommentAction(await findManagedComment(octokit, marker), body);
+		let existingComments = await findManagedComments(octokit, marker);
+		let action = decideCommentAction(existingComments[0] ?? null, body);
+		if (action.type === "create") {
+			existingComments = await findManagedComments(octokit, marker);
+			action = decideCommentAction(existingComments[0] ?? null, body);
+		}
 		if (action.type === "create") await octokit.rest.issues.createComment({
 			...import_github.context.repo,
 			issue_number: issueNumber,
@@ -39507,6 +39519,7 @@ async function updatePullRequestComment(octokit, summary, config) {
 			...import_github.context.repo,
 			comment_id: action.commentId
 		});
+		await deleteDuplicateManagedComments(octokit, existingComments);
 	} catch (error) {
 		if (isPermissionError(error)) {
 			import_core.warning("gh-build-size skipped PR comment updates because the workflow token cannot write pull request comments.");
