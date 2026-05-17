@@ -24,11 +24,15 @@ function pickColor(target: TargetStatus, badge?: BadgeConfig): string {
     ...DEFAULT_COLORS,
     ...badge?.colors,
   }
-  const compression = pickCompression(target, badge)
-  const current = target.sizes[compression].current
   if (target.violations.some((violation) => violation.fail)) {
     return `#${colors.error.replace(/^#/, '')}`
   }
+  const compression = pickCompression(target, badge)
+  const sizeStatus = target.sizes[compression]
+  if (!sizeStatus.enabled) {
+    return `#${colors.ok.replace(/^#/, '')}`
+  }
+  const current = sizeStatus.current
   if (
     badge?.thresholds?.error_above !== undefined &&
     current >= badge.thresholds.error_above
@@ -47,7 +51,10 @@ function pickColor(target: TargetStatus, badge?: BadgeConfig): string {
 export function renderBadge(target: TargetStatus, badge?: BadgeConfig): string {
   const compression = pickCompression(target, badge)
   const label = badge?.label ?? `${target.label} (${compression})`
-  const value = `${target.sizes[compression].current.toLocaleString('en-US')} B`
+  const sizeStatus = target.sizes[compression]
+  const value = sizeStatus.enabled
+    ? `${sizeStatus.current.toLocaleString('en-US')} B`
+    : 'N/A'
   const escapedLabel = escapeXml(label)
   const escapedValue = escapeXml(value)
   const color = pickColor(target, badge)

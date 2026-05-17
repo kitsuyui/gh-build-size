@@ -26,4 +26,19 @@ describe('renderBadge', () => {
     expect(svg).toContain('web (gzip)')
     expect(svg).toContain('60 B')
   })
+
+  test('renders N/A when selected compression is disabled', () => {
+    const disabledTarget: TargetStatus = {
+      ...target,
+      sizes: {
+        raw: { enabled: true, current: 120, base: 100, delta: 20 },
+        gzip: { enabled: false, current: 0, base: null, delta: null },
+        brotli: { enabled: false, current: 0, base: null, delta: null },
+      },
+    }
+    const svg = renderBadge(disabledTarget, { compression: 'gzip' })
+    expect(svg).toContain('web (gzip)')
+    expect(svg).toContain('N/A')
+    expect(svg).not.toContain('0 B')
+  })
 })
