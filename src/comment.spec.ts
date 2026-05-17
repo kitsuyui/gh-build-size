@@ -93,6 +93,15 @@ describe('comment', () => {
     expect(body).toContain('| `web` | n&#x2F;a | 120 B | n&#x2F;a |')
   })
 
+  test('exposes per-compression sizes in row template data', () => {
+    const template = `{{{marker}}}
+{{#rows}}
+raw:{{sizes.raw.current}} gzip:{{sizes.gzip.current}} brotli:{{sizes.brotli.current}}
+{{/rows}}`
+    const body = renderComment(summary, template, buildMarker('default'))
+    expect(body).toContain('raw:120 B gzip:60 B brotli:55 B')
+  })
+
   test('renders compressed-only targets in the markdown table', () => {
     const body = renderComment(
       {
@@ -100,9 +109,9 @@ describe('comment', () => {
         targets: summary.targets.map((target) => ({
           ...target,
           sizes: {
-            raw: { current: 0, base: null, delta: null },
-            gzip: { current: 60, base: 50, delta: 10 },
-            brotli: { current: 0, base: null, delta: null },
+            raw: { enabled: false, current: 0, base: null, delta: null },
+            gzip: { enabled: true, current: 60, base: 50, delta: 10 },
+            brotli: { enabled: false, current: 0, base: null, delta: null },
           },
         })),
       },
