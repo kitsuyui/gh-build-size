@@ -336,6 +336,20 @@ export async function normalizeConfig(
     normalizeTarget,
   )
 
+  const seen = new Set<string>()
+  const duplicates = new Set<string>()
+  for (const { id } of normalizedTargets) {
+    if (seen.has(id)) duplicates.add(id)
+    seen.add(id)
+  }
+  if (duplicates.size > 0) {
+    throw new Error(
+      `Duplicate target IDs detected: ${[...duplicates].join(', ')}. ` +
+        'Slugification may merge distinct names (e.g. "my-pkg" and "my.pkg" both produce "my-pkg"). ' +
+        'Assign explicit "id" fields to disambiguate.',
+    )
+  }
+
   return {
     defaultBranch: inputs.defaultBranch ?? config.default_branch,
     comment: {
