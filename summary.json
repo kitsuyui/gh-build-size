@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-18T00:07:43.413Z",
+  "generated_at": "2026-05-18T00:07:55.564Z",
   "repository": "kitsuyui/gh-build-size",
   "default_branch": "main",
   "publish_branch": "gh-build-size-assets",
   "event_name": "push",
   "base_label": "main",
-  "base_reference": "53d98913f6a42197d6a4a5ae40c15c9b4d26ae1e",
+  "base_reference": "f4914857efcbae2454a97445076e15c29e7c4edc",
   "head_label": "main",
-  "head_reference": "f4914857efcbae2454a97445076e15c29e7c4edc",
+  "head_reference": "697b2c3950170898856e7b72a9399221e744fed7",
   "targets": [
     {
       "id": "total",
@@ -24,21 +24,21 @@
       "sizes": {
         "raw": {
           "enabled": true,
-          "current": 4329597,
-          "base": 4329141,
-          "delta": 456
+          "current": 4331581,
+          "base": 4329597,
+          "delta": 1984
         },
         "gzip": {
           "enabled": true,
-          "current": 956025,
-          "base": 955910,
-          "delta": 115
+          "current": 956315,
+          "base": 956025,
+          "delta": 290
         },
         "brotli": {
           "enabled": true,
-          "current": 760230,
-          "base": 760954,
-          "delta": -724
+          "current": 761370,
+          "base": 760230,
+          "delta": 1140
         }
       },
       "violations": [],
@@ -57,28 +57,28 @@
       "sizes": {
         "raw": {
           "enabled": true,
-          "current": 1562533,
-          "base": 1562372,
-          "delta": 161
+          "current": 1563200,
+          "base": 1562533,
+          "delta": 667
         },
         "gzip": {
           "enabled": true,
-          "current": 349520,
-          "base": 349481,
-          "delta": 39
+          "current": 349605,
+          "base": 349520,
+          "delta": 85
         },
         "brotli": {
           "enabled": true,
-          "current": 276901,
-          "base": 277113,
-          "delta": -212
+          "current": 277225,
+          "base": 276901,
+          "delta": 324
         }
       },
       "violations": [
         {
           "compression": "gzip",
           "kind": "no_increase",
-          "message": "349520 B increased from 349481 B",
+          "message": "349605 B increased from 349520 B",
           "fail": false
         }
       ],
@@ -97,21 +97,21 @@
       "sizes": {
         "raw": {
           "enabled": true,
-          "current": 2767053,
-          "base": 2766758,
-          "delta": 295
+          "current": 2768370,
+          "base": 2767053,
+          "delta": 1317
         },
         "gzip": {
           "enabled": true,
-          "current": 606474,
-          "base": 606398,
-          "delta": 76
+          "current": 606679,
+          "base": 606474,
+          "delta": 205
         },
         "brotli": {
           "enabled": true,
-          "current": 483314,
-          "base": 483826,
-          "delta": -512
+          "current": 484130,
+          "base": 483314,
+          "delta": 816
         }
       },
       "violations": [],

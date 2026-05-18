@@ -1,11 +1,11 @@
 # gh-build-size report
 
 - Repository: **kitsuyui/gh-build-size**
-- Head: `f4914857efcbae2454a97445076e15c29e7c4edc`
-- Generated at: 2026-05-18T00:07:43.414Z
+- Head: `697b2c3950170898856e7b72a9399221e744fed7`
+- Generated at: 2026-05-18T00:07:55.564Z
 
 | File | Raw | Gzip | Brotli |
 | --- | ---: | ---: | ---: |
 | `dist/index.d.mts` | 11 B | 31 B | 15 B |
-| `dist/index.mjs` | 1,562,533 B | 349,520 B | 276,901 B |
-| `dist/index.mjs.map` | 2,767,053 B | 606,474 B | 483,314 B |
+| `dist/index.mjs` | 1,563,200 B | 349,605 B | 277,225 B |
+| `dist/index.mjs.map` | 2,768,370 B | 606,679 B | 484,130 B |
