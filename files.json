@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-17T17:37:04.436Z",
+  "generated_at": "2026-05-18T00:07:43.414Z",
   "repository": "kitsuyui/gh-build-size",
   "default_branch": "main",
   "publish_branch": "gh-build-size-assets",
   "event_name": "push",
-  "head_reference": "53d98913f6a42197d6a4a5ae40c15c9b4d26ae1e",
+  "head_reference": "f4914857efcbae2454a97445076e15c29e7c4edc",
   "files": [
     {
       "path": "dist/index.d.mts",
@@ -18,17 +18,17 @@
     {
       "path": "dist/index.mjs",
       "sizes": {
-        "raw": 1562372,
-        "gzip": 349481,
-        "brotli": 277113
+        "raw": 1562533,
+        "gzip": 349520,
+        "brotli": 276901
       }
     },
     {
       "path": "dist/index.mjs.map",
       "sizes": {
-        "raw": 2766758,
-        "gzip": 606398,
-        "brotli": 483826
+        "raw": 2767053,
+        "gzip": 606474,
+        "brotli": 483314
       }
     }
   ]
