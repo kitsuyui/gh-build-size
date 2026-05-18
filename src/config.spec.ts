@@ -129,4 +129,63 @@ describe('normalizeConfig', () => {
       ),
     ).toBe(true)
   })
+
+  test('throws on duplicate target IDs caused by slugification collision', async () => {
+    const workspaceRoot = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'gh-build-size-config-collision-'),
+    )
+    await fs.mkdir(path.join(workspaceRoot, 'packages', 'my-package'), {
+      recursive: true,
+    })
+    await fs.mkdir(path.join(workspaceRoot, 'packages', 'my.package'), {
+      recursive: true,
+    })
+    await fs.writeFile(
+      path.join(workspaceRoot, 'packages', 'my-package', 'package.json'),
+      '{}\n',
+    )
+    await fs.writeFile(
+      path.join(workspaceRoot, 'packages', 'my.package', 'package.json'),
+      '{}\n',
+    )
+
+    await expect(
+      normalizeConfig(
+        {
+          resolvers: [
+            {
+              type: 'workspace-packages',
+              root: 'packages',
+              dist_dir: 'dist',
+              include: ['**/*'],
+            },
+          ],
+        },
+        {
+          githubToken: 'token',
+          configPath: '.github/gh-build-size.yml',
+          outputDir: '.gh-build-size',
+        },
+        workspaceRoot,
+      ),
+    ).rejects.toThrow('Duplicate target IDs detected')
+  })
+
+  test('throws on duplicate target IDs from explicit targets', async () => {
+    await expect(
+      normalizeConfig(
+        {
+          targets: [
+            { id: 'web', files: ['dist/**/*.js'] },
+            { id: 'web', files: ['build/**/*.js'] },
+          ],
+        },
+        {
+          githubToken: 'token',
+          configPath: '.github/gh-build-size.yml',
+          outputDir: '.gh-build-size',
+        },
+      ),
+    ).rejects.toThrow('Duplicate target IDs detected')
+  })
 })
