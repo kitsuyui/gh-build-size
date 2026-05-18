@@ -59,6 +59,26 @@ export function renderComment(
           base: formatBytes(selected.size.base),
           current: formatBytes(selected.size.current),
           delta: formatDelta(selected.size.delta),
+          sizes: {
+            raw: {
+              enabled: target.sizes.raw.enabled,
+              base: formatBytes(target.sizes.raw.base),
+              current: formatBytes(target.sizes.raw.current),
+              delta: formatDelta(target.sizes.raw.delta),
+            },
+            gzip: {
+              enabled: target.sizes.gzip.enabled,
+              base: formatBytes(target.sizes.gzip.base),
+              current: formatBytes(target.sizes.gzip.current),
+              delta: formatDelta(target.sizes.gzip.delta),
+            },
+            brotli: {
+              enabled: target.sizes.brotli.enabled,
+              base: formatBytes(target.sizes.brotli.base),
+              current: formatBytes(target.sizes.brotli.current),
+              delta: formatDelta(target.sizes.brotli.delta),
+            },
+          },
         },
       ]
     })
