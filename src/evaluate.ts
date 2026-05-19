@@ -61,9 +61,7 @@ export function evaluateTargets(
     const base = baseSnapshots.find((item) => item.id === target.id)
     const touchedFiles = touchedFilesByTarget.get(target.id) ?? []
     const baselineMissing =
-      isPullRequest &&
-      publishedTargetIds !== null &&
-      !publishedTargetIds.has(target.id)
+      publishedTargetIds !== null && !publishedTargetIds.has(target.id)
     const commentable =
       !isPullRequest || baselineMissing || touchedFiles.length > 0
     const violations = buildViolations(target, current, base)

@@ -160,6 +160,9 @@ async function run(): Promise<void> {
           brotli: target.sizes.brotli.current,
         },
       })) ?? []
+    publishedTargetIds = new Set(
+      publishedSummary?.targets.map((target) => target.id) ?? [],
+    )
   }
 
   const touchedFilesByTarget = new Map(

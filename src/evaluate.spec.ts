@@ -95,4 +95,46 @@ describe('evaluateTargets', () => {
     expect(target?.baseline_missing).toBe(false)
     expect(target?.commentable).toBe(false)
   })
+
+  test('marks baseline_missing for push event when target absent from published summary', () => {
+    const [target] = evaluateTargets(
+      config,
+      currentSnapshots,
+      baseSnapshots,
+      new Map(),
+      new Set(),
+      false,
+    )
+
+    expect(target?.baseline_missing).toBe(true)
+    expect(target?.commentable).toBe(true)
+  })
+
+  test('does not mark baseline_missing for push event when target present in published summary', () => {
+    const [target] = evaluateTargets(
+      config,
+      currentSnapshots,
+      baseSnapshots,
+      new Map(),
+      new Set(['web']),
+      false,
+    )
+
+    expect(target?.baseline_missing).toBe(false)
+    expect(target?.commentable).toBe(true)
+  })
+
+  test('does not mark baseline_missing when publishedTargetIds is null (no published summary)', () => {
+    const [target] = evaluateTargets(
+      config,
+      currentSnapshots,
+      baseSnapshots,
+      new Map(),
+      null,
+      false,
+    )
+
+    expect(target?.baseline_missing).toBe(false)
+    expect(target?.commentable).toBe(true)
+  })
 })
