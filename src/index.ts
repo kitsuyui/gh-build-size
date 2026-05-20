@@ -7,6 +7,7 @@ import { countFailingViolations, evaluateTargets } from './evaluate'
 import {
   createGitRevisionReader,
   currentHeadReference,
+  isAncestorCommit,
   listChangedFiles,
   resolvePullRequestBaseReference,
   touchedFilesForTarget,
@@ -145,21 +146,26 @@ async function run(): Promise<void> {
         config.publish.summary_filename,
       ),
     )
-    baseReference = publishedSummary?.head_reference ?? null
-    baseSnapshots =
-      publishedSummary?.targets.map((target) => ({
-        id: target.id,
-        label: target.label,
-        files: target.files.map((filePath) => ({
-          path: filePath,
-          sizes: null,
-        })),
-        totals: {
-          raw: target.sizes.raw.current,
-          gzip: target.sizes.gzip.current,
-          brotli: target.sizes.brotli.current,
-        },
-      })) ?? []
+    const cachedRef = publishedSummary?.head_reference ?? null
+    const ancestorVerified =
+      cachedRef !== null && (await isAncestorCommit(cachedRef))
+    baseReference = ancestorVerified ? cachedRef : null
+    if (ancestorVerified) {
+      baseSnapshots =
+        publishedSummary?.targets.map((target) => ({
+          id: target.id,
+          label: target.label,
+          files: target.files.map((filePath) => ({
+            path: filePath,
+            sizes: null,
+          })),
+          totals: {
+            raw: target.sizes.raw.current,
+            gzip: target.sizes.gzip.current,
+            brotli: target.sizes.brotli.current,
+          },
+        })) ?? []
+    }
     publishedTargetIds = new Set(
       publishedSummary?.targets.map((target) => target.id) ?? [],
     )

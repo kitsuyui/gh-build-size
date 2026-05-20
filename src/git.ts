@@ -52,6 +52,15 @@ export function touchedFilesForTarget(
   }).sort()
 }
 
+export async function isAncestorCommit(sha: string): Promise<boolean> {
+  try {
+    await execGit(['merge-base', '--is-ancestor', sha, 'HEAD'])
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function createGitRevisionReader(): RevisionReader {
   return {
     async listFiles(revision: string): Promise<string[]> {
