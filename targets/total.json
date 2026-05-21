@@ -14,23 +14,23 @@
     {
       "path": "dist/index.mjs",
       "sizes": {
-        "raw": 1564044,
-        "gzip": 349884,
-        "brotli": 277184
+        "raw": 1563916,
+        "gzip": 349848,
+        "brotli": 277606
       }
     },
     {
       "path": "dist/index.mjs.map",
       "sizes": {
-        "raw": 2769886,
-        "gzip": 607142,
-        "brotli": 484545
+        "raw": 2769763,
+        "gzip": 607096,
+        "brotli": 484265
       }
     }
   ],
   "totals": {
-    "raw": 4333941,
-    "gzip": 957057,
-    "brotli": 761744
+    "raw": 4333690,
+    "gzip": 956975,
+    "brotli": 761886
   }
 }
