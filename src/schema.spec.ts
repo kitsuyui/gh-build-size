@@ -59,6 +59,24 @@ describe('published schema validation', () => {
     expect(summary?.targets[0]?.sizes.raw.enabled).toBe(true)
   })
 
+  test('accepts published summaries without generated_at', () => {
+    const summary = normalizePublishedSummary({
+      schema_version: 1,
+      repository: 'kitsuyui/gh-build-size',
+      default_branch: 'main',
+      publish_branch: null,
+      event_name: 'pull_request',
+      base_label: 'main',
+      base_reference: 'base',
+      head_label: '#1',
+      head_reference: 'head',
+      targets: [targetStatus],
+    })
+
+    expect(summary?.generated_at).toBeUndefined()
+    expect(summary?.targets[0]?.id).toBe('web')
+  })
+
   test('rejects unsupported published summary schema versions', () => {
     expect(
       normalizePublishedSummary({
@@ -80,7 +98,6 @@ describe('published schema validation', () => {
   test('validates published files and target snapshots', () => {
     expect(
       normalizePublishedFilesSnapshot({
-        generated_at: '2026-04-12T00:00:00.000Z',
         repository: 'kitsuyui/gh-build-size',
         default_branch: 'main',
         publish_branch: 'gh-build-size-assets',

@@ -17,7 +17,6 @@ export function renderReportMarkdown(snapshot: FilesSnapshot): string {
 
 - Repository: **${snapshot.repository}**
 - Head: \`${snapshot.head_reference}\`
-- Generated at: ${snapshot.generated_at}
 
 | File | Raw | Gzip | Brotli |
 | --- | ---: | ---: | ---: |

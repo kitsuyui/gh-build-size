@@ -5,7 +5,6 @@ import type { FilesSnapshot } from './types'
 
 const snapshot: FilesSnapshot = {
   schema_version: 1,
-  generated_at: '2026-04-12T00:00:00.000Z',
   repository: 'kitsuyui/gh-build-size',
   default_branch: 'main',
   publish_branch: 'gh-build-size-assets',
@@ -29,5 +28,6 @@ describe('renderReportMarkdown', () => {
     expect(markdown).toContain('# gh-build-size report')
     expect(markdown).toContain('| `dist/index.mjs` | 120 B | 60 B | 55 B |')
     expect(markdown).toContain('- Repository: **kitsuyui/gh-build-size**')
+    expect(markdown).not.toContain('Generated at')
   })
 })

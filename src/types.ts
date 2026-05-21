@@ -103,7 +103,7 @@ export interface TargetSnapshot {
 
 export interface FilesSnapshot {
   schema_version: number
-  generated_at: string
+  generated_at?: string
   repository: string
   default_branch: string
   publish_branch: string | null
@@ -142,7 +142,7 @@ export interface TargetStatus {
 
 export interface SummaryStatus {
   schema_version: number
-  generated_at: string
+  generated_at?: string
   repository: string
   default_branch: string
   publish_branch: string | null

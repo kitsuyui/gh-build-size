@@ -156,7 +156,8 @@ export function normalizePublishedSummary(
     ? value.targets.map(normalizeTargetStatus)
     : null
   if (
-    typeof value.generated_at !== 'string' ||
+    (value.generated_at !== undefined &&
+      typeof value.generated_at !== 'string') ||
     typeof value.repository !== 'string' ||
     typeof value.default_branch !== 'string' ||
     !isNullableString(value.publish_branch) ||
@@ -189,7 +190,8 @@ export function normalizePublishedFilesSnapshot(
     return null
   }
   if (
-    typeof value.generated_at !== 'string' ||
+    (value.generated_at !== undefined &&
+      typeof value.generated_at !== 'string') ||
     typeof value.repository !== 'string' ||
     typeof value.default_branch !== 'string' ||
     !isNullableString(value.publish_branch) ||
