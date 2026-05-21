@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-20T17:05:29.314Z",
+  "generated_at": "2026-05-21T13:13:11.015Z",
   "repository": "kitsuyui/gh-build-size",
   "default_branch": "main",
   "publish_branch": "gh-build-size-assets",
   "event_name": "push",
-  "head_reference": "9dde71759a2b5238ac2999038c44bdce18aeacf4",
+  "head_reference": "b6997ae8288a488d0f7a0c01275150d0bf35ad21",
   "files": [
     {
       "path": "dist/index.d.mts",
