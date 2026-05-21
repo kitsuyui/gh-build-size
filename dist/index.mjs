@@ -38257,7 +38257,7 @@ function normalizePublishedSummary(value) {
 	const schemaVersion = readPublishedSchemaVersion(value);
 	if (schemaVersion === null) return null;
 	const targets = Array.isArray(value.targets) ? value.targets.map(normalizeTargetStatus) : null;
-	if (typeof value.generated_at !== "string" || typeof value.repository !== "string" || typeof value.default_branch !== "string" || !isNullableString(value.publish_branch) || typeof value.event_name !== "string" || typeof value.base_label !== "string" || !isNullableString(value.base_reference) || typeof value.head_label !== "string" || typeof value.head_reference !== "string" || targets === null || targets.some((target) => target === null)) return null;
+	if (value.generated_at !== void 0 && typeof value.generated_at !== "string" || typeof value.repository !== "string" || typeof value.default_branch !== "string" || !isNullableString(value.publish_branch) || typeof value.event_name !== "string" || typeof value.base_label !== "string" || !isNullableString(value.base_reference) || typeof value.head_label !== "string" || typeof value.head_reference !== "string" || targets === null || targets.some((target) => target === null)) return null;
 	return {
 		...value,
 		schema_version: schemaVersion,
@@ -38567,6 +38567,13 @@ async function expandResolvers(resolvers, workspaceRoot) {
 async function normalizeConfig(config, inputs, workspaceRoot = process.cwd()) {
 	const expandedTargets = await expandResolvers(config.resolvers ?? [], workspaceRoot);
 	const normalizedTargets = [...config.targets ?? [], ...expandedTargets].map(normalizeTarget);
+	const seen = /* @__PURE__ */ new Set();
+	const duplicates = /* @__PURE__ */ new Set();
+	for (const { id } of normalizedTargets) {
+		if (seen.has(id)) duplicates.add(id);
+		seen.add(id);
+	}
+	if (duplicates.size > 0) throw new Error(`Duplicate target IDs detected: ${[...duplicates].join(", ")}. Slugification may merge distinct names (e.g. "my-pkg" and "my.pkg" both produce "my-pkg"). Assign explicit "id" fields to disambiguate.`);
 	return {
 		defaultBranch: inputs.defaultBranch ?? config.default_branch,
 		comment: {
@@ -38623,7 +38630,7 @@ function evaluateTargets(config, currentSnapshots, baseSnapshots, touchedFilesBy
 		if (!current) throw new Error(`Missing current snapshot for target "${target.id}"`);
 		const base = baseSnapshots.find((item) => item.id === target.id);
 		const touchedFiles = touchedFilesByTarget.get(target.id) ?? [];
-		const baselineMissing = isPullRequest && publishedTargetIds !== null && !publishedTargetIds.has(target.id);
+		const baselineMissing = publishedTargetIds !== null && !publishedTargetIds.has(target.id);
 		const commentable = !isPullRequest || baselineMissing || touchedFiles.length > 0;
 		const violations = buildViolations(target, current, base);
 		const sizes = {
@@ -38706,6 +38713,19 @@ async function listChangedFiles(baseReference) {
 function touchedFilesForTarget(target, changedFiles) {
 	return (0, import_micromatch.default)(changedFiles, target.files, { ignore: target.exclude ?? [] }).sort();
 }
+async function isAncestorCommit(sha) {
+	try {
+		await execGit([
+			"merge-base",
+			"--is-ancestor",
+			sha,
+			"HEAD"
+		]);
+		return true;
+	} catch {
+		return false;
+	}
+}
 function createGitRevisionReader() {
 	return {
 		async listFiles(revision) {
@@ -38746,9 +38766,11 @@ function pickColor(target, badge) {
 		...DEFAULT_COLORS,
 		...badge?.colors
 	};
-	const compression = pickCompression(target, badge);
-	const current = target.sizes[compression].current;
 	if (target.violations.some((violation) => violation.fail)) return `#${colors.error.replace(/^#/, "")}`;
+	const compression = pickCompression(target, badge);
+	const sizeStatus = target.sizes[compression];
+	if (!sizeStatus.enabled) return `#${colors.ok.replace(/^#/, "")}`;
+	const current = sizeStatus.current;
 	if (badge?.thresholds?.error_above !== void 0 && current >= badge.thresholds.error_above) return `#${colors.error.replace(/^#/, "")}`;
 	if (badge?.thresholds?.warn_above !== void 0 && current >= badge.thresholds.warn_above) return `#${colors.warn.replace(/^#/, "")}`;
 	return `#${colors.ok.replace(/^#/, "")}`;
@@ -38756,7 +38778,8 @@ function pickColor(target, badge) {
 function renderBadge(target, badge) {
 	const compression = pickCompression(target, badge);
 	const label = badge?.label ?? `${target.label} (${compression})`;
-	const value = `${target.sizes[compression].current.toLocaleString("en-US")} B`;
+	const sizeStatus = target.sizes[compression];
+	const value = sizeStatus.enabled ? `${sizeStatus.current.toLocaleString("en-US")} B` : "N/A";
 	const escapedLabel = escapeXml(label);
 	const escapedValue = escapeXml(value);
 	const color = pickColor(target, badge);
@@ -39403,7 +39426,27 @@ function renderComment(summary, template, marker) {
 			label: `\`${target.label}\`${compressionLabel}`,
 			base: formatBytes$1(selected.size.base),
 			current: formatBytes$1(selected.size.current),
-			delta: formatDelta(selected.size.delta)
+			delta: formatDelta(selected.size.delta),
+			sizes: {
+				raw: {
+					enabled: target.sizes.raw.enabled,
+					base: formatBytes$1(target.sizes.raw.base),
+					current: formatBytes$1(target.sizes.raw.current),
+					delta: formatDelta(target.sizes.raw.delta)
+				},
+				gzip: {
+					enabled: target.sizes.gzip.enabled,
+					base: formatBytes$1(target.sizes.gzip.base),
+					current: formatBytes$1(target.sizes.gzip.current),
+					delta: formatDelta(target.sizes.gzip.delta)
+				},
+				brotli: {
+					enabled: target.sizes.brotli.enabled,
+					base: formatBytes$1(target.sizes.brotli.base),
+					current: formatBytes$1(target.sizes.brotli.current),
+					delta: formatDelta(target.sizes.brotli.delta)
+				}
+			}
 		}];
 	});
 	const violations = summary.targets.flatMap((target) => target.violations.map((violation) => ({
@@ -39449,7 +39492,6 @@ function renderReportMarkdown(snapshot) {
 
 - Repository: **${snapshot.repository}**
 - Head: \`${snapshot.head_reference}\`
-- Generated at: ${snapshot.generated_at}
 
 | File | Raw | Gzip | Brotli |
 | --- | ---: | ---: | ---: |
@@ -39756,7 +39798,6 @@ function attachOutputPaths(summary, outputDir) {
 function buildSummary(defaultBranch, publishBranch, baseLabel, baseReference, headLabel, headReference, targets) {
 	return {
 		schema_version: PUBLISHED_SCHEMA_VERSION,
-		generated_at: (/* @__PURE__ */ new Date()).toISOString(),
 		repository: import_github.context.payload.repository?.full_name ?? "",
 		default_branch: defaultBranch,
 		publish_branch: publishBranch,
@@ -39773,7 +39814,6 @@ function buildFilesSnapshot(defaultBranch, publishBranch, headReference, snapsho
 	for (const snapshot of snapshots) for (const file of snapshot.files) files.set(file.path, file);
 	return {
 		schema_version: PUBLISHED_SCHEMA_VERSION,
-		generated_at: (/* @__PURE__ */ new Date()).toISOString(),
 		repository: import_github.context.payload.repository?.full_name ?? "",
 		default_branch: defaultBranch,
 		publish_branch: publishBranch,
@@ -39806,8 +39846,10 @@ async function run() {
 		headLabel = `#${import_github.context.payload.pull_request?.number ?? "pr"}`;
 	} else if (import_github.context.eventName === "push" && import_github.context.ref === `refs/heads/${defaultBranch}` && config.publish.enabled) {
 		const publishedSummary = await fetchPublishedSummary(octokit, config.publish.branch, path.posix.join(config.publish.directory, config.publish.summary_filename));
-		baseReference = publishedSummary?.head_reference ?? null;
-		baseSnapshots = publishedSummary?.targets.map((target) => ({
+		const cachedRef = publishedSummary?.head_reference ?? null;
+		const ancestorVerified = cachedRef !== null && await isAncestorCommit(cachedRef);
+		baseReference = ancestorVerified ? cachedRef : null;
+		if (ancestorVerified) baseSnapshots = publishedSummary?.targets.map((target) => ({
 			id: target.id,
 			label: target.label,
 			files: target.files.map((filePath) => ({
@@ -39820,6 +39862,7 @@ async function run() {
 				brotli: target.sizes.brotli.current
 			}
 		})) ?? [];
+		publishedTargetIds = new Set(publishedSummary?.targets.map((target) => target.id) ?? []);
 	}
 	const touchedFilesByTarget = new Map(config.targets.map((target) => [target.id, touchedFilesForTarget(target, changedFiles)]).filter(([, touchedFiles]) => touchedFiles.length > 0));
 	const evaluatedTargets = evaluateTargets(config, currentSnapshots, baseSnapshots, touchedFilesByTarget, publishedTargetIds, import_github.context.eventName === "pull_request");

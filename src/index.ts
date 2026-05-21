@@ -54,7 +54,6 @@ function buildSummary(
 ): SummaryStatus {
   return {
     schema_version: PUBLISHED_SCHEMA_VERSION,
-    generated_at: new Date().toISOString(),
     repository: github.context.payload.repository?.full_name ?? '',
     default_branch: defaultBranch,
     publish_branch: publishBranch,
@@ -83,7 +82,6 @@ function buildFilesSnapshot(
 
   return {
     schema_version: PUBLISHED_SCHEMA_VERSION,
-    generated_at: new Date().toISOString(),
     repository: github.context.payload.repository?.full_name ?? '',
     default_branch: defaultBranch,
     publish_branch: publishBranch,
