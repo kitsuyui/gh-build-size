@@ -23,7 +23,7 @@ inputs:
     description: 'Override the HTML marker key used for idempotent PR comments'
     required: false
   output-dir:
-    description: 'Directory used to write generated summary JSON and badges'
+    description: 'Directory used to write generated summary, file snapshot, report, target JSON, and badges'
     required: false
     default: '.gh-build-size'
 
