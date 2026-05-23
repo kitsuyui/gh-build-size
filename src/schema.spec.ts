@@ -95,6 +95,67 @@ describe('published schema validation', () => {
     ).toBeNull()
   })
 
+  test('rejects published summaries with targets missing sizes field', () => {
+    expect(
+      normalizePublishedSummary({
+        schema_version: 1,
+        repository: 'kitsuyui/gh-build-size',
+        default_branch: 'main',
+        publish_branch: null,
+        event_name: 'push',
+        base_label: 'main',
+        base_reference: null,
+        head_label: 'main',
+        head_reference: 'head',
+        targets: [
+          {
+            id: 'web',
+            label: 'web',
+            files: ['dist/app.js'],
+            touched_files: [],
+            baseline_missing: false,
+            commentable: true,
+            // sizes intentionally missing to simulate old publish branch data
+            violations: [],
+            badge_path: 'badges/web.svg',
+            target_path: 'targets/web.json',
+          },
+        ],
+      }),
+    ).toBeNull()
+  })
+
+  test('rejects published summaries with targets that have sizes in legacy numeric format', () => {
+    expect(
+      normalizePublishedSummary({
+        schema_version: 1,
+        repository: 'kitsuyui/gh-build-size',
+        default_branch: 'main',
+        publish_branch: null,
+        event_name: 'push',
+        base_label: 'main',
+        base_reference: null,
+        head_label: 'main',
+        head_reference: 'head',
+        targets: [
+          {
+            id: 'web',
+            label: 'web',
+            files: ['dist/app.js'],
+            touched_files: [],
+            baseline_missing: false,
+            commentable: true,
+            // legacy format: sizes as plain numbers instead of SizeValueStatus objects
+            sizes: { raw: 120, gzip: 60, brotli: 55 },
+            violations: [],
+            badge_path: 'badges/web.svg',
+            target_path: 'targets/web.json',
+          },
+        ],
+      }),
+    ).toBeNull()
+  })
+
   test('validates published files and target snapshots', () => {
     expect(
       normalizePublishedFilesSnapshot({
