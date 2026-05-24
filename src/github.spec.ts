@@ -1,12 +1,20 @@
+import fs from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-import { publishAssets, updatePullRequestComment } from './github'
+import {
+  publishAssets,
+  updatePullRequestComment,
+  writeOutputFiles,
+} from './github'
 
 import type { FilesSnapshot, NormalizedConfig, SummaryStatus } from './types'
 
 vi.mock('@actions/core', () => ({
+  setOutput: vi.fn(),
   warning: vi.fn(),
 }))
 
@@ -141,6 +149,46 @@ const commentConfig: NormalizedConfig = {
     template: '{{{marker}}}\nupdated body',
   },
 }
+
+describe('writeOutputFiles', () => {
+  let tmpBase: string
+  let outputDir: string
+
+  beforeEach(async () => {
+    tmpBase = await fs.mkdtemp(path.join(os.tmpdir(), 'gh-build-size-test-'))
+    outputDir = path.join(tmpBase, 'output')
+    vi.clearAllMocks()
+  })
+
+  afterEach(async () => {
+    await fs.rm(tmpBase, { recursive: true, force: true })
+  })
+
+  test('writes all expected files and cleans up staging dir', async () => {
+    await writeOutputFiles(outputDir, summary, filesSnapshot, [], [], config)
+
+    const files = await fs.readdir(outputDir)
+    expect(files).toContain('summary.json')
+    expect(files).toContain('files.json')
+    expect(files).toContain('report.md')
+
+    // Staging dir must not remain after a successful write
+    await expect(fs.access(`${outputDir}.tmp`)).rejects.toThrow()
+  })
+
+  test('replaces a pre-existing output directory atomically', async () => {
+    // Simulate a previous partial run leaving stale files in outputDir
+    await fs.mkdir(outputDir, { recursive: true })
+    await fs.writeFile(path.join(outputDir, 'stale.txt'), 'stale')
+
+    await writeOutputFiles(outputDir, summary, filesSnapshot, [], [], config)
+
+    const files = await fs.readdir(outputDir)
+    expect(files).toContain('summary.json')
+    expect(files).not.toContain('stale.txt')
+    await expect(fs.access(`${outputDir}.tmp`)).rejects.toThrow()
+  })
+})
 
 describe('publishAssets', () => {
   beforeEach(() => {
