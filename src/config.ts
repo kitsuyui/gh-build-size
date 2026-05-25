@@ -4,6 +4,7 @@ import * as core from '@actions/core'
 import Ajv from 'ajv'
 import fg from 'fast-glob'
 import YAML from 'yaml'
+import { DEFAULT_MAX_FILE_BYTES } from './limits'
 import { CONFIG_SCHEMA_VERSION } from './schema'
 import type {
   ActionConfig,
@@ -91,6 +92,7 @@ const schema = {
             minItems: 1,
             items: { enum: compressions },
           },
+          max_file_bytes: { type: 'integer', minimum: 0 },
           limits: {
             type: 'object',
             additionalProperties: false,
@@ -169,6 +171,7 @@ const schema = {
             minItems: 1,
             items: { enum: compressions },
           },
+          max_file_bytes: { type: 'integer', minimum: 0 },
           limits: {
             type: 'object',
             additionalProperties: false,
@@ -277,13 +280,16 @@ export async function loadConfig(configPath: string): Promise<ActionConfig> {
   return parsed as ActionConfig
 }
 
-function normalizeTarget(
-  target: TargetConfig,
-): TargetConfig & { label: string; compressions: Compression[] } {
+function normalizeTarget(target: TargetConfig): TargetConfig & {
+  label: string
+  compressions: Compression[]
+  max_file_bytes: number
+} {
   return {
     ...target,
     label: target.label ?? target.id,
     compressions: target.compressions ?? ['raw', 'gzip', 'brotli'],
+    max_file_bytes: target.max_file_bytes ?? DEFAULT_MAX_FILE_BYTES,
   }
 }
 
@@ -313,6 +319,7 @@ function workspacePackageTarget(
       path.posix.join(distDir, pattern),
     ),
     compressions: resolver.compressions,
+    max_file_bytes: resolver.max_file_bytes,
     limits: resolver.limits,
     ratchet: resolver.ratchet,
     badge: resolver.badge,

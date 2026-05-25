@@ -3,6 +3,7 @@ import { promisify } from 'node:util'
 import zlib from 'node:zlib'
 import fg from 'fast-glob'
 import micromatch from 'micromatch'
+import { assertFileWithinMaxBytes, DEFAULT_MAX_FILE_BYTES } from './limits'
 import { PUBLISHED_SCHEMA_VERSION } from './schema'
 import type {
   Compression,
@@ -16,7 +17,11 @@ const brotliCompress = promisify(zlib.brotliCompress)
 
 export interface RevisionReader {
   listFiles(revision: string): Promise<string[]>
-  readFile(revision: string, filePath: string): Promise<Buffer>
+  readFile(
+    revision: string,
+    filePath: string,
+    maxFileBytes: number,
+  ): Promise<Buffer>
 }
 
 async function compressBuffer(
@@ -48,6 +53,17 @@ async function filesForWorkspace(target: TargetConfig): Promise<string[]> {
   return found.sort()
 }
 
+async function readWorkspaceFile(
+  filePath: string,
+  maxFileBytes: number,
+): Promise<Buffer> {
+  const stats = await fs.stat(filePath)
+  assertFileWithinMaxBytes(filePath, stats.size, maxFileBytes)
+  const content = await fs.readFile(filePath)
+  assertFileWithinMaxBytes(filePath, content.byteLength, maxFileBytes)
+  return content
+}
+
 function filesForRevision(allFiles: string[], target: TargetConfig): string[] {
   return micromatch(allFiles, target.files, {
     ignore: target.exclude ?? [],
@@ -57,7 +73,8 @@ function filesForRevision(allFiles: string[], target: TargetConfig): string[] {
 async function measureFiles(
   files: string[],
   compressions: Compression[],
-  readFile: (filePath: string) => Promise<Buffer>,
+  maxFileBytes: number,
+  readFile: (filePath: string, maxFileBytes: number) => Promise<Buffer>,
 ): Promise<{
   files: FileSnapshot[]
   totals: Record<Compression, number>
@@ -70,7 +87,8 @@ async function measureFiles(
   const measuredFiles: FileSnapshot[] = []
 
   for (const filePath of files) {
-    const content = await readFile(filePath)
+    const content = await readFile(filePath, maxFileBytes)
+    assertFileWithinMaxBytes(filePath, content.byteLength, maxFileBytes)
     const sizes: Record<Compression, number> = {
       raw: 0,
       gzip: 0,
@@ -99,10 +117,12 @@ export async function measureWorkspaceTargets(
   return Promise.all(
     targets.map(async (target) => {
       const files = await filesForWorkspace(target)
+      const maxFileBytes = target.max_file_bytes ?? DEFAULT_MAX_FILE_BYTES
       const measured = await measureFiles(
         files,
         target.compressions,
-        (filePath) => fs.readFile(filePath),
+        maxFileBytes,
+        readWorkspaceFile,
       )
 
       return {
@@ -125,10 +145,12 @@ export async function measureRevisionTargets(
   return Promise.all(
     targets.map(async (target) => {
       const files = filesForRevision(revisionFiles, target)
+      const maxFileBytes = target.max_file_bytes ?? DEFAULT_MAX_FILE_BYTES
       const measured = await measureFiles(
         files,
         target.compressions,
-        (filePath) => reader.readFile(revision, filePath),
+        maxFileBytes,
+        (filePath, limit) => reader.readFile(revision, filePath, limit),
       )
 
       return {

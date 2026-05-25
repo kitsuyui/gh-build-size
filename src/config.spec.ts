@@ -4,6 +4,7 @@ import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 
 import { DEFAULT_COMMENT_TEMPLATE, loadConfig, normalizeConfig } from './config'
+import { DEFAULT_MAX_FILE_BYTES } from './limits'
 
 describe('normalizeConfig', () => {
   test('loads config schema version 1', async () => {
@@ -19,12 +20,14 @@ describe('normalizeConfig', () => {
         '  - id: web',
         '    files:',
         '      - dist/**/*.js',
+        '    max_file_bytes: 1024',
         '',
       ].join('\n'),
     )
 
     await expect(loadConfig(configPath)).resolves.toMatchObject({
       version: 1,
+      targets: [{ max_file_bytes: 1024 }],
     })
   })
 
@@ -102,6 +105,7 @@ describe('normalizeConfig', () => {
     expect(config.publish.branch).toBe('gh-build-size')
     expect(config.targets[0]?.compressions).toEqual(['raw', 'gzip', 'brotli'])
     expect(config.targets[0]?.label).toBe('web')
+    expect(config.targets[0]?.max_file_bytes).toBe(DEFAULT_MAX_FILE_BYTES)
   })
 
   test('expands workspace package resolvers', async () => {
@@ -138,6 +142,7 @@ describe('normalizeConfig', () => {
             root: 'packages',
             dist_dir: 'dist',
             include: ['**/*'],
+            max_file_bytes: 1024,
           },
         ],
       },
@@ -165,6 +170,9 @@ describe('normalizeConfig', () => {
           target.id === 'pkg-gamma' &&
           target.files.includes('packages/@scope/gamma/dist/**/*'),
       ),
+    ).toBe(true)
+    expect(
+      config.targets.every((target) => target.max_file_bytes === 1024),
     ).toBe(true)
   })
 

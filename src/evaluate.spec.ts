@@ -26,6 +26,7 @@ const config: NormalizedConfig = {
       label: 'web',
       files: ['dist/**/*.js'],
       compressions: ['raw', 'gzip', 'brotli'],
+      max_file_bytes: 64 * 1024 * 1024,
     },
   ],
 }

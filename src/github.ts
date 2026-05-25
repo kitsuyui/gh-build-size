@@ -19,6 +19,8 @@ import type {
 type Octokit = ReturnType<typeof github.getOctokit>
 
 const PUBLISH_BRANCH_MAX_ATTEMPTS = 3
+const MANAGED_COMMENT_PAGE_SIZE = 100
+const MANAGED_COMMENT_SEARCH_MAX_PAGES = 10
 type ManagedComment = { id: number; body: string }
 
 function isPermissionError(error: unknown): boolean {
@@ -53,17 +55,33 @@ async function findManagedComments(
   if (!issueNumber) {
     return []
   }
-  const comments = await octokit.paginate(octokit.rest.issues.listComments, {
+  const pages = octokit.paginate.iterator(octokit.rest.issues.listComments, {
     ...github.context.repo,
     issue_number: issueNumber,
-    per_page: 100,
+    per_page: MANAGED_COMMENT_PAGE_SIZE,
   })
-  return comments.flatMap((comment) => {
-    if (!comment.body?.includes(marker)) {
+
+  let searchedPages = 0
+  for await (const page of pages) {
+    searchedPages += 1
+    const comments = page.data.flatMap((comment) => {
+      if (!comment.body?.includes(marker)) {
+        return []
+      }
+      return [{ id: comment.id, body: comment.body }]
+    })
+    if (comments.length > 0) {
+      return comments
+    }
+    if (searchedPages >= MANAGED_COMMENT_SEARCH_MAX_PAGES) {
+      core.warning(
+        `gh-build-size stopped searching pull request comments after ${MANAGED_COMMENT_SEARCH_MAX_PAGES} pages without finding its marker.`,
+      )
       return []
     }
-    return [{ id: comment.id, body: comment.body }]
-  })
+  }
+
+  return []
 }
 
 async function deleteDuplicateManagedComments(

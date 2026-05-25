@@ -75,7 +75,7 @@ const config: NormalizedConfig = {
 
 function createOctokit() {
   return {
-    paginate: vi.fn(),
+    paginate: createPaginateMock(),
     rest: {
       git: {
         getRef: vi.fn(),
@@ -97,6 +97,20 @@ function createOctokit() {
 
 function mockFn(fn: unknown): ReturnType<typeof vi.fn> {
   return fn as ReturnType<typeof vi.fn>
+}
+
+function createPaginateMock(): ReturnType<typeof vi.fn> & {
+  iterator: ReturnType<typeof vi.fn>
+} {
+  return Object.assign(vi.fn(), { iterator: vi.fn() })
+}
+
+async function* commentPages(
+  pages: Array<Array<{ id: number; body?: string | null }>>,
+) {
+  for (const data of pages) {
+    yield { data }
+  }
 }
 
 function createCommentableSummary(): SummaryStatus {
@@ -282,11 +296,15 @@ describe('updatePullRequestComment', () => {
 
   test('updates the first managed comment and deletes duplicate marker comments', async () => {
     const octokit = createOctokit()
-    mockFn(octokit.paginate).mockResolvedValue([
-      { id: 1, body: '<!-- gh-build-size:gh-build-size -->\nold body' },
-      { id: 2, body: '<!-- gh-build-size:gh-build-size -->\nduplicate' },
-      { id: 3, body: 'unmanaged comment' },
-    ])
+    mockFn(octokit.paginate.iterator).mockReturnValue(
+      commentPages([
+        [
+          { id: 1, body: '<!-- gh-build-size:gh-build-size -->\nold body' },
+          { id: 2, body: '<!-- gh-build-size:gh-build-size -->\nduplicate' },
+          { id: 3, body: 'unmanaged comment' },
+        ],
+      ]),
+    )
 
     await updatePullRequestComment(
       octokit,
@@ -310,11 +328,18 @@ describe('updatePullRequestComment', () => {
 
   test('rechecks comments before creating a new managed comment', async () => {
     const octokit = createOctokit()
-    mockFn(octokit.paginate)
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([
-        { id: 4, body: '<!-- gh-build-size:gh-build-size -->\nraced body' },
-      ])
+    mockFn(octokit.paginate.iterator)
+      .mockReturnValueOnce(commentPages([[]]))
+      .mockReturnValueOnce(
+        commentPages([
+          [
+            {
+              id: 4,
+              body: '<!-- gh-build-size:gh-build-size -->\nraced body',
+            },
+          ],
+        ]),
+      )
 
     await updatePullRequestComment(
       octokit,
@@ -322,7 +347,7 @@ describe('updatePullRequestComment', () => {
       commentConfig,
     )
 
-    expect(octokit.paginate).toHaveBeenCalledTimes(2)
+    expect(octokit.paginate.iterator).toHaveBeenCalledTimes(2)
     expect(octokit.rest.issues.updateComment).toHaveBeenCalledWith(
       expect.objectContaining({
         comment_id: 4,
@@ -330,5 +355,37 @@ describe('updatePullRequestComment', () => {
       }),
     )
     expect(octokit.rest.issues.createComment).not.toHaveBeenCalled()
+  })
+
+  test('stops scanning comment pages after finding the marker', async () => {
+    const octokit = createOctokit()
+    const secondPageVisited = vi.fn()
+    async function* pages() {
+      yield {
+        data: [
+          { id: 1, body: '<!-- gh-build-size:gh-build-size -->\nold body' },
+        ],
+      }
+      secondPageVisited()
+      yield {
+        data: [
+          { id: 2, body: '<!-- gh-build-size:gh-build-size -->\nduplicate' },
+        ],
+      }
+    }
+    mockFn(octokit.paginate.iterator).mockReturnValue(pages())
+
+    await updatePullRequestComment(
+      octokit,
+      createCommentableSummary(),
+      commentConfig,
+    )
+
+    expect(secondPageVisited).not.toHaveBeenCalled()
+    expect(octokit.rest.issues.updateComment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        comment_id: 1,
+      }),
+    )
   })
 })
