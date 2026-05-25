@@ -332,15 +332,31 @@ export async function writeOutputFiles(
   snapshots: TargetSnapshot[],
   config: NormalizedConfig,
 ): Promise<void> {
-  await fs.mkdir(outputDir, { recursive: true })
-  await fs.mkdir(path.join(outputDir, 'badges'), { recursive: true })
-  await fs.mkdir(path.join(outputDir, 'targets'), { recursive: true })
+  // Write all files to a staging directory first so that a mid-write process
+  // termination (OOM kill, signal) never leaves a partial file set visible at
+  // outputDir. The final rename makes the complete set observable atomically.
+  const stagingDir = `${outputDir}.tmp`
+  await fs.rm(stagingDir, { recursive: true, force: true })
+  await fs.mkdir(stagingDir, { recursive: true })
+  await fs.mkdir(path.join(stagingDir, 'badges'), { recursive: true })
+  await fs.mkdir(path.join(stagingDir, 'targets'), { recursive: true })
+
   const summaryPath = path.join(outputDir, 'summary.json')
   const filesPath = path.join(outputDir, 'files.json')
   const reportPath = path.join(outputDir, 'report.md')
-  await fs.writeFile(summaryPath, `${JSON.stringify(summary, null, 2)}\n`)
-  await fs.writeFile(filesPath, `${JSON.stringify(filesSnapshot, null, 2)}\n`)
-  await fs.writeFile(reportPath, renderReportMarkdown(filesSnapshot))
+
+  await fs.writeFile(
+    path.join(stagingDir, 'summary.json'),
+    `${JSON.stringify(summary, null, 2)}\n`,
+  )
+  await fs.writeFile(
+    path.join(stagingDir, 'files.json'),
+    `${JSON.stringify(filesSnapshot, null, 2)}\n`,
+  )
+  await fs.writeFile(
+    path.join(stagingDir, 'report.md'),
+    renderReportMarkdown(filesSnapshot),
+  )
 
   for (const target of targetStatuses) {
     const targetConfig = config.targets.find((item) => item.id === target.id)
@@ -349,14 +365,19 @@ export async function writeOutputFiles(
       continue
     }
     await fs.writeFile(
-      path.join(outputDir, 'badges', `${target.id}.svg`),
+      path.join(stagingDir, 'badges', `${target.id}.svg`),
       renderBadge(target, targetConfig.badge),
     )
     await fs.writeFile(
-      path.join(outputDir, 'targets', `${target.id}.json`),
+      path.join(stagingDir, 'targets', `${target.id}.json`),
       `${JSON.stringify(snapshot, null, 2)}\n`,
     )
   }
+
+  // Swap staging dir into place. Remove any previous output dir so that
+  // rename(2) sees an absent destination (Linux requires it for directories).
+  await fs.rm(outputDir, { recursive: true, force: true })
+  await fs.rename(stagingDir, outputDir)
 
   core.setOutput('summary-path', summaryPath)
   core.setOutput('files-path', filesPath)
