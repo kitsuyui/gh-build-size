@@ -123,8 +123,16 @@ const schema = {
                 type: 'object',
                 additionalProperties: false,
                 properties: {
-                  warn_above: { type: 'integer', minimum: 0 },
-                  error_above: { type: 'integer', minimum: 0 },
+                  warn_above: {
+                    type: 'integer',
+                    minimum: 0,
+                    description: 'bytes',
+                  },
+                  error_above: {
+                    type: 'integer',
+                    minimum: 0,
+                    description: 'bytes',
+                  },
                 },
               },
             },
@@ -193,8 +201,16 @@ const schema = {
                 type: 'object',
                 additionalProperties: false,
                 properties: {
-                  warn_above: { type: 'integer', minimum: 0 },
-                  error_above: { type: 'integer', minimum: 0 },
+                  warn_above: {
+                    type: 'integer',
+                    minimum: 0,
+                    description: 'bytes',
+                  },
+                  error_above: {
+                    type: 'integer',
+                    minimum: 0,
+                    description: 'bytes',
+                  },
                 },
               },
             },

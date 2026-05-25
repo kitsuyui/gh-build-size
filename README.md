@@ -123,9 +123,10 @@ Useful target fields:
 - `files`: glob patterns to include in the target
 - `exclude`: files to ignore from that target
 - `compressions`: any of `raw`, `gzip`, `brotli`
-- `limits`: absolute size thresholds
+- `limits`: absolute size thresholds (`max_bytes` is in bytes)
 - `ratchet`: relative rules such as `no_increase`
-- `badge`: how to render the published SVG badge
+- `badge`: how to render the published SVG badge; `badge.thresholds.warn_above`
+  and `badge.thresholds.error_above` are in bytes, matching `limits.max_bytes`
 
 The durable record is file-level data. Pull request comments, target summaries,
 and badges are views generated from those measured file snapshots.
