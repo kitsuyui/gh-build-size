@@ -11,7 +11,9 @@ export interface RatchetConfig {
 }
 
 export interface BadgeThresholds {
+  /** Warn color threshold in bytes. */
   warn_above?: number
+  /** Error color threshold in bytes. */
   error_above?: number
 }
 
