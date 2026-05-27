@@ -48,6 +48,44 @@ describe('normalizeConfig', () => {
     await expect(loadConfig(configPath)).rejects.toThrow('Invalid config')
   })
 
+  test.each<[string, string[]]>([
+    [
+      'target',
+      [
+        'version: 1',
+        'targets:',
+        '  - id: web',
+        '    files:',
+        '      - dist/**/*.js',
+        '    badge:',
+        '      colors:',
+        '        ok: \'" onclick="alert(1)\'',
+        '',
+      ],
+    ],
+    [
+      'resolver',
+      [
+        'version: 1',
+        'resolvers:',
+        '  - type: workspace-packages',
+        '    root: packages',
+        '    badge:',
+        '      colors:',
+        '        ok: \'" onclick="alert(1)\'',
+        '',
+      ],
+    ],
+  ])('rejects non-hex badge colors for %s configs', async (_name, lines) => {
+    const workspaceRoot = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'gh-build-size-config-color-'),
+    )
+    const configPath = path.join(workspaceRoot, 'gh-build-size.yml')
+    await fs.writeFile(configPath, lines.join('\n'))
+
+    await expect(loadConfig(configPath)).rejects.toThrow('Invalid config')
+  })
+
   test('fills defaults', async () => {
     const config = await normalizeConfig(
       {

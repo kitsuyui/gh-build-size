@@ -41,4 +41,20 @@ describe('renderBadge', () => {
     expect(svg).toContain('N/A')
     expect(svg).not.toContain('0 B')
   })
+
+  test('renders configured hex badge colors', () => {
+    const svg = renderBadge(target, { colors: { ok: '#abc' } })
+
+    expect(svg).toContain('fill="#abc"')
+  })
+
+  test('falls back instead of embedding invalid badge colors', () => {
+    const svg = renderBadge(target, {
+      colors: { ok: '" onclick="alert(1)' },
+    })
+
+    expect(svg).toContain('fill="#2ea44f"')
+    expect(svg).not.toContain('onclick')
+    expect(svg).not.toContain('&quot;')
+  })
 })

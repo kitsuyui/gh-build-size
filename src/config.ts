@@ -34,6 +34,11 @@ const ratchetSchema = {
   },
 }
 
+const colorSchema = {
+  type: 'string',
+  pattern: '^#?(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$',
+}
+
 const schema = {
   type: 'object',
   additionalProperties: false,
@@ -114,9 +119,9 @@ const schema = {
                 type: 'object',
                 additionalProperties: false,
                 properties: {
-                  ok: { type: 'string' },
-                  warn: { type: 'string' },
-                  error: { type: 'string' },
+                  ok: colorSchema,
+                  warn: colorSchema,
+                  error: colorSchema,
                 },
               },
               thresholds: {
@@ -184,9 +189,9 @@ const schema = {
                 type: 'object',
                 additionalProperties: false,
                 properties: {
-                  ok: { type: 'string' },
-                  warn: { type: 'string' },
-                  error: { type: 'string' },
+                  ok: colorSchema,
+                  warn: colorSchema,
+                  error: colorSchema,
                 },
               },
               thresholds: {

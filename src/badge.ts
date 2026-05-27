@@ -6,6 +6,10 @@ const DEFAULT_COLORS = {
   error: 'cf222e',
 } as const
 
+const HEX_COLOR_PATTERN = /^#?(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/
+
+type BadgeColorName = keyof typeof DEFAULT_COLORS
+
 function escapeXml(value: string): string {
   return value
     .replaceAll('&', '&amp;')
@@ -19,33 +23,37 @@ function pickCompression(_target: TargetStatus, badge?: BadgeConfig) {
   return badge?.compression ?? 'raw'
 }
 
-function pickColor(target: TargetStatus, badge?: BadgeConfig): string {
-  const colors = {
-    ...DEFAULT_COLORS,
-    ...badge?.colors,
+function pickBadgeColor(name: BadgeColorName, badge?: BadgeConfig): string {
+  const color = badge?.colors?.[name]?.trim()
+  if (color && HEX_COLOR_PATTERN.test(color)) {
+    return `#${color.replace(/^#/, '')}`
   }
+  return `#${DEFAULT_COLORS[name]}`
+}
+
+function pickColor(target: TargetStatus, badge?: BadgeConfig): string {
   if (target.violations.some((violation) => violation.fail)) {
-    return `#${colors.error.replace(/^#/, '')}`
+    return pickBadgeColor('error', badge)
   }
   const compression = pickCompression(target, badge)
   const sizeStatus = target.sizes[compression]
   if (!sizeStatus.enabled) {
-    return `#${colors.ok.replace(/^#/, '')}`
+    return pickBadgeColor('ok', badge)
   }
   const current = sizeStatus.current
   if (
     badge?.thresholds?.error_above !== undefined &&
     current >= badge.thresholds.error_above
   ) {
-    return `#${colors.error.replace(/^#/, '')}`
+    return pickBadgeColor('error', badge)
   }
   if (
     badge?.thresholds?.warn_above !== undefined &&
     current >= badge.thresholds.warn_above
   ) {
-    return `#${colors.warn.replace(/^#/, '')}`
+    return pickBadgeColor('warn', badge)
   }
-  return `#${colors.ok.replace(/^#/, '')}`
+  return pickBadgeColor('ok', badge)
 }
 
 export function renderBadge(target: TargetStatus, badge?: BadgeConfig): string {
