@@ -38291,6 +38291,10 @@ const ratchetSchema = {
 		fail: { type: "boolean" }
 	}
 };
+const colorSchema = {
+	type: "string",
+	pattern: "^#?(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$"
+};
 const schema = {
 	type: "object",
 	additionalProperties: false,
@@ -38377,9 +38381,9 @@ const schema = {
 								type: "object",
 								additionalProperties: false,
 								properties: {
-									ok: { type: "string" },
-									warn: { type: "string" },
-									error: { type: "string" }
+									ok: colorSchema,
+									warn: colorSchema,
+									error: colorSchema
 								}
 							},
 							thresholds: {
@@ -38456,9 +38460,9 @@ const schema = {
 								type: "object",
 								additionalProperties: false,
 								properties: {
-									ok: { type: "string" },
-									warn: { type: "string" },
-									error: { type: "string" }
+									ok: colorSchema,
+									warn: colorSchema,
+									error: colorSchema
 								}
 							},
 							thresholds: {
@@ -38755,25 +38759,27 @@ const DEFAULT_COLORS = {
 	warn: "dbab09",
 	error: "cf222e"
 };
+const HEX_COLOR_PATTERN = /^#?(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
 function escapeXml(value) {
 	return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\"", "&quot;").replaceAll("'", "&apos;");
 }
 function pickCompression(_target, badge) {
 	return badge?.compression ?? "raw";
 }
+function pickBadgeColor(name, badge) {
+	const color = badge?.colors?.[name]?.trim();
+	if (color && HEX_COLOR_PATTERN.test(color)) return `#${color.replace(/^#/, "")}`;
+	return `#${DEFAULT_COLORS[name]}`;
+}
 function pickColor(target, badge) {
-	const colors = {
-		...DEFAULT_COLORS,
-		...badge?.colors
-	};
-	if (target.violations.some((violation) => violation.fail)) return `#${colors.error.replace(/^#/, "")}`;
+	if (target.violations.some((violation) => violation.fail)) return pickBadgeColor("error", badge);
 	const compression = pickCompression(target, badge);
 	const sizeStatus = target.sizes[compression];
-	if (!sizeStatus.enabled) return `#${colors.ok.replace(/^#/, "")}`;
+	if (!sizeStatus.enabled) return pickBadgeColor("ok", badge);
 	const current = sizeStatus.current;
-	if (badge?.thresholds?.error_above !== void 0 && current >= badge.thresholds.error_above) return `#${colors.error.replace(/^#/, "")}`;
-	if (badge?.thresholds?.warn_above !== void 0 && current >= badge.thresholds.warn_above) return `#${colors.warn.replace(/^#/, "")}`;
-	return `#${colors.ok.replace(/^#/, "")}`;
+	if (badge?.thresholds?.error_above !== void 0 && current >= badge.thresholds.error_above) return pickBadgeColor("error", badge);
+	if (badge?.thresholds?.warn_above !== void 0 && current >= badge.thresholds.warn_above) return pickBadgeColor("warn", badge);
+	return pickBadgeColor("ok", badge);
 }
 function renderBadge(target, badge) {
 	const compression = pickCompression(target, badge);
@@ -39683,22 +39689,32 @@ async function publishAssets(octokit, summary, filesSnapshot, targetStatuses, sn
 	}
 }
 async function writeOutputFiles(outputDir, summary, filesSnapshot, targetStatuses, snapshots, config) {
-	await fs.mkdir(outputDir, { recursive: true });
-	await fs.mkdir(path.join(outputDir, "badges"), { recursive: true });
-	await fs.mkdir(path.join(outputDir, "targets"), { recursive: true });
+	const stagingDir = `${outputDir}.tmp`;
+	await fs.rm(stagingDir, {
+		recursive: true,
+		force: true
+	});
+	await fs.mkdir(stagingDir, { recursive: true });
+	await fs.mkdir(path.join(stagingDir, "badges"), { recursive: true });
+	await fs.mkdir(path.join(stagingDir, "targets"), { recursive: true });
 	const summaryPath = path.join(outputDir, "summary.json");
 	const filesPath = path.join(outputDir, "files.json");
 	const reportPath = path.join(outputDir, "report.md");
-	await fs.writeFile(summaryPath, `${JSON.stringify(summary, null, 2)}\n`);
-	await fs.writeFile(filesPath, `${JSON.stringify(filesSnapshot, null, 2)}\n`);
-	await fs.writeFile(reportPath, renderReportMarkdown(filesSnapshot));
+	await fs.writeFile(path.join(stagingDir, "summary.json"), `${JSON.stringify(summary, null, 2)}\n`);
+	await fs.writeFile(path.join(stagingDir, "files.json"), `${JSON.stringify(filesSnapshot, null, 2)}\n`);
+	await fs.writeFile(path.join(stagingDir, "report.md"), renderReportMarkdown(filesSnapshot));
 	for (const target of targetStatuses) {
 		const targetConfig = config.targets.find((item) => item.id === target.id);
 		const snapshot = snapshots.find((item) => item.id === target.id);
 		if (!targetConfig || !snapshot) continue;
-		await fs.writeFile(path.join(outputDir, "badges", `${target.id}.svg`), renderBadge(target, targetConfig.badge));
-		await fs.writeFile(path.join(outputDir, "targets", `${target.id}.json`), `${JSON.stringify(snapshot, null, 2)}\n`);
+		await fs.writeFile(path.join(stagingDir, "badges", `${target.id}.svg`), renderBadge(target, targetConfig.badge));
+		await fs.writeFile(path.join(stagingDir, "targets", `${target.id}.json`), `${JSON.stringify(snapshot, null, 2)}\n`);
 	}
+	await fs.rm(outputDir, {
+		recursive: true,
+		force: true
+	});
+	await fs.rename(stagingDir, outputDir);
 	import_core.setOutput("summary-path", summaryPath);
 	import_core.setOutput("files-path", filesPath);
 	import_core.setOutput("report-path", reportPath);
