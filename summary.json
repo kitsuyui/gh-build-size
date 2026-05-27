@@ -5,9 +5,9 @@
   "publish_branch": "gh-build-size-assets",
   "event_name": "push",
   "base_label": "main",
-  "base_reference": "cd5f6d5efb17b5df528b75bc4c5fb7961292e940",
+  "base_reference": "3b702044c5c0bca5575db79cf87d0ef11ad5c8d6",
   "head_label": "main",
-  "head_reference": "3b702044c5c0bca5575db79cf87d0ef11ad5c8d6",
+  "head_reference": "c198b930f406d71d0a28e888711bc574f1d37e0f",
   "targets": [
     {
       "id": "total",
@@ -23,21 +23,21 @@
       "sizes": {
         "raw": {
           "enabled": true,
-          "current": 4334945,
-          "base": 4333690,
-          "delta": 1255
+          "current": 4335529,
+          "base": 4334945,
+          "delta": 584
         },
         "gzip": {
           "enabled": true,
-          "current": 957337,
-          "base": 956975,
-          "delta": 362
+          "current": 957376,
+          "base": 957337,
+          "delta": 39
         },
         "brotli": {
           "enabled": true,
-          "current": 761679,
-          "base": 761886,
-          "delta": -207
+          "current": 761412,
+          "base": 761679,
+          "delta": -267
         }
       },
       "violations": [],
@@ -56,28 +56,28 @@
       "sizes": {
         "raw": {
           "enabled": true,
-          "current": 1564207,
-          "base": 1563916,
-          "delta": 291
+          "current": 1564335,
+          "base": 1564207,
+          "delta": 128
         },
         "gzip": {
           "enabled": true,
-          "current": 349902,
-          "base": 349848,
-          "delta": 54
+          "current": 349914,
+          "base": 349902,
+          "delta": 12
         },
         "brotli": {
           "enabled": true,
-          "current": 277307,
-          "base": 277606,
-          "delta": -299
+          "current": 277303,
+          "base": 277307,
+          "delta": -4
         }
       },
       "violations": [
         {
           "compression": "gzip",
           "kind": "no_increase",
-          "message": "349902 B increased from 349848 B",
+          "message": "349914 B increased from 349902 B",
           "fail": false
         }
       ],
@@ -96,21 +96,21 @@
       "sizes": {
         "raw": {
           "enabled": true,
-          "current": 2770727,
-          "base": 2769763,
-          "delta": 964
+          "current": 2771183,
+          "base": 2770727,
+          "delta": 456
         },
         "gzip": {
           "enabled": true,
-          "current": 607404,
-          "base": 607096,
-          "delta": 308
+          "current": 607431,
+          "base": 607404,
+          "delta": 27
         },
         "brotli": {
           "enabled": true,
-          "current": 484357,
-          "base": 484265,
-          "delta": 92
+          "current": 484094,
+          "base": 484357,
+          "delta": -263
         }
       },
       "violations": [],
