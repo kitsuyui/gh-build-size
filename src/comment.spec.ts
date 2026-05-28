@@ -53,8 +53,31 @@ describe('comment', () => {
       DEFAULT_COMMENT_TEMPLATE,
       buildMarker('default'),
     )
-    expect(body).toContain('| `web` | 100 B | 120 B | +20 B |')
+    expect(body).toContain('| <code>web</code> | 100 B | 120 B | +20 B |')
     expect(body).toContain('120 B exceeds limit 100 B')
+  })
+
+  test('escapes target labels before inserting them into markdown tables', () => {
+    const body = renderComment(
+      {
+        ...summary,
+        targets: summary.targets.map((target) => ({
+          ...target,
+          label: 'web|<script>`x`\nnext',
+        })),
+      },
+      DEFAULT_COMMENT_TEMPLATE,
+      buildMarker('default'),
+    )
+
+    expect(body).toContain(
+      '| <code>web&#124;&lt;script&gt;`x` next</code> | 100 B | 120 B | +20 B |',
+    )
+    expect(body).toContain(
+      '- web&#124;&lt;script&gt;&#96;x&#96; next (raw): 120 B exceeds limit 100 B',
+    )
+    expect(body).not.toContain('<script>')
+    expect(body).not.toContain('web|')
   })
 
   test('decides update action', () => {
@@ -90,7 +113,7 @@ describe('comment', () => {
       buildMarker('default'),
     )
     expect(body).not.toContain('### Initial measurement')
-    expect(body).toContain('| `web` | n&#x2F;a | 120 B | n&#x2F;a |')
+    expect(body).toContain('| <code>web</code> | n&#x2F;a | 120 B | n&#x2F;a |')
   })
 
   test('exposes per-compression sizes in row template data', () => {
@@ -118,6 +141,6 @@ raw:{{sizes.raw.current}} gzip:{{sizes.gzip.current}} brotli:{{sizes.brotli.curr
       DEFAULT_COMMENT_TEMPLATE,
       buildMarker('default'),
     )
-    expect(body).toContain('| `web` (gzip) | 50 B | 60 B | +10 B |')
+    expect(body).toContain('| <code>web</code> (gzip) | 50 B | 60 B | +10 B |')
   })
 })

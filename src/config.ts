@@ -243,7 +243,7 @@ export const DEFAULT_COMMENT_TEMPLATE = `{{{marker}}}
 {{#has_violations}}
 ### Violations
 {{#violations}}
-- {{label}} ({{compression}}): {{message}}
+- {{{label}}} ({{compression}}): {{message}}
 {{/violations}}
 {{/has_violations}}
 

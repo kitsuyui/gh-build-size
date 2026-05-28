@@ -38392,11 +38392,13 @@ const schema = {
 								properties: {
 									warn_above: {
 										type: "integer",
-										minimum: 0
+										minimum: 0,
+										description: "bytes"
 									},
 									error_above: {
 										type: "integer",
-										minimum: 0
+										minimum: 0,
+										description: "bytes"
 									}
 								}
 							}
@@ -38471,11 +38473,13 @@ const schema = {
 								properties: {
 									warn_above: {
 										type: "integer",
-										minimum: 0
+										minimum: 0,
+										description: "bytes"
 									},
 									error_above: {
 										type: "integer",
-										minimum: 0
+										minimum: 0,
+										description: "bytes"
 									}
 								}
 							}
@@ -38501,7 +38505,7 @@ const DEFAULT_COMMENT_TEMPLATE = `{{{marker}}}
 {{#has_violations}}
 ### Violations
 {{#violations}}
-- {{label}} ({{compression}}): {{message}}
+- {{{label}}} ({{compression}}): {{message}}
 {{/violations}}
 {{/has_violations}}
 
@@ -38872,7 +38876,7 @@ var entityMap = {
 	"`": "&#x60;",
 	"=": "&#x3D;"
 };
-function escapeHtml(string) {
+function escapeHtml$1(string) {
 	return String(string).replace(/[&<>"'`=\/]/g, function fromEntityMap(s) {
 		return entityMap[s];
 	});
@@ -39389,10 +39393,25 @@ mustache.render = function render(template, view, partials, config) {
 	if (typeof template !== "string") throw new TypeError("Invalid template! Template should be a \"string\" but \"" + typeStr(template) + "\" was given as the first argument for mustache#render(template, view, partials)");
 	return defaultWriter.render(template, view, partials, config);
 };
-mustache.escape = escapeHtml;
+mustache.escape = escapeHtml$1;
 mustache.Scanner = Scanner;
 mustache.Context = Context;
 mustache.Writer = Writer;
+
+//#endregion
+//#region src/markdown.ts
+function escapeHtml(value) {
+	return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function normalizeInlineText(value) {
+	return value.replace(/\r\n?/g, "\n").replace(/\n/g, " ");
+}
+function renderMarkdownCodeCell(value) {
+	return `<code>${escapeHtml(normalizeInlineText(value)).replace(/\|/g, "&#124;")}</code>`;
+}
+function renderMarkdownText(value) {
+	return escapeHtml(normalizeInlineText(value)).replace(/\|/g, "&#124;").replace(/`/g, "&#96;");
+}
 
 //#endregion
 //#region src/comment.ts
@@ -39429,7 +39448,7 @@ function renderComment(summary, template, marker) {
 		if (!selected) return [];
 		const compressionLabel = selected.compression === "raw" ? "" : ` (${selected.compression})`;
 		return [{
-			label: `\`${target.label}\`${compressionLabel}`,
+			label: `${renderMarkdownCodeCell(target.label)}${compressionLabel}`,
 			base: formatBytes$1(selected.size.base),
 			current: formatBytes$1(selected.size.current),
 			delta: formatDelta(selected.size.delta),
@@ -39456,7 +39475,7 @@ function renderComment(summary, template, marker) {
 		}];
 	});
 	const violations = summary.targets.flatMap((target) => target.violations.map((violation) => ({
-		label: target.label,
+		label: renderMarkdownText(target.label),
 		compression: violation.compression,
 		message: violation.message
 	})));
@@ -39493,7 +39512,10 @@ function formatBytes(value) {
 	return `${value.toLocaleString("en-US")} B`;
 }
 function renderReportMarkdown(snapshot) {
-	const rows = snapshot.files.map((file) => file.sizes ? `| \`${file.path}\` | ${formatBytes(file.sizes.raw)} | ${formatBytes(file.sizes.gzip)} | ${formatBytes(file.sizes.brotli)} |` : `| \`${file.path}\` | N/A | N/A | N/A |`).join("\n");
+	const rows = snapshot.files.map((file) => {
+		const path = renderMarkdownCodeCell(file.path);
+		return file.sizes ? `| ${path} | ${formatBytes(file.sizes.raw)} | ${formatBytes(file.sizes.gzip)} | ${formatBytes(file.sizes.brotli)} |` : `| ${path} | N/A | N/A | N/A |`;
+	}).join("\n");
 	return `# gh-build-size report
 
 - Repository: **${snapshot.repository}**
