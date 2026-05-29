@@ -1,3 +1,4 @@
+import { renderMarkdownCodeCell } from './markdown'
 import type { FilesSnapshot } from './types'
 
 function formatBytes(value: number): string {
@@ -6,11 +7,12 @@ function formatBytes(value: number): string {
 
 export function renderReportMarkdown(snapshot: FilesSnapshot): string {
   const rows = snapshot.files
-    .map((file) =>
-      file.sizes
-        ? `| \`${file.path}\` | ${formatBytes(file.sizes.raw)} | ${formatBytes(file.sizes.gzip)} | ${formatBytes(file.sizes.brotli)} |`
-        : `| \`${file.path}\` | N/A | N/A | N/A |`,
-    )
+    .map((file) => {
+      const path = renderMarkdownCodeCell(file.path)
+      return file.sizes
+        ? `| ${path} | ${formatBytes(file.sizes.raw)} | ${formatBytes(file.sizes.gzip)} | ${formatBytes(file.sizes.brotli)} |`
+        : `| ${path} | N/A | N/A | N/A |`
+    })
     .join('\n')
 
   return `# gh-build-size report

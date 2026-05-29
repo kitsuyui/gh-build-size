@@ -1,5 +1,6 @@
 import Mustache from 'mustache'
 
+import { renderMarkdownCodeCell, renderMarkdownText } from './markdown'
 import type { Compression, SummaryStatus } from './types'
 
 const commentCompressions: Compression[] = ['raw', 'gzip', 'brotli']
@@ -55,7 +56,7 @@ export function renderComment(
         selected.compression === 'raw' ? '' : ` (${selected.compression})`
       return [
         {
-          label: `\`${target.label}\`${compressionLabel}`,
+          label: `${renderMarkdownCodeCell(target.label)}${compressionLabel}`,
           base: formatBytes(selected.size.base),
           current: formatBytes(selected.size.current),
           delta: formatDelta(selected.size.delta),
@@ -84,7 +85,7 @@ export function renderComment(
     })
   const violations = summary.targets.flatMap((target) =>
     target.violations.map((violation) => ({
-      label: target.label,
+      label: renderMarkdownText(target.label),
       compression: violation.compression,
       message: violation.message,
     })),

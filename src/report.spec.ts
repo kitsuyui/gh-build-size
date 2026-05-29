@@ -26,8 +26,28 @@ describe('renderReportMarkdown', () => {
   test('renders a simple file size report', () => {
     const markdown = renderReportMarkdown(snapshot)
     expect(markdown).toContain('# gh-build-size report')
-    expect(markdown).toContain('| `dist/index.mjs` | 120 B | 60 B | 55 B |')
+    expect(markdown).toContain(
+      '| <code>dist/index.mjs</code> | 120 B | 60 B | 55 B |',
+    )
     expect(markdown).toContain('- Repository: **kitsuyui/gh-build-size**')
     expect(markdown).not.toContain('Generated at')
+  })
+
+  test('escapes file paths before inserting them into markdown tables', () => {
+    const markdown = renderReportMarkdown({
+      ...snapshot,
+      files: [
+        {
+          path: 'dist/with|pipe`tick<script>\nnext.mjs',
+          sizes: null,
+        },
+      ],
+    })
+
+    expect(markdown).toContain(
+      '| <code>dist/with&#124;pipe`tick&lt;script&gt; next.mjs</code> | N/A | N/A | N/A |',
+    )
+    expect(markdown).not.toContain('<script>')
+    expect(markdown).not.toContain('with|pipe')
   })
 })
