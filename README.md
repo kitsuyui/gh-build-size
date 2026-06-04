@@ -123,6 +123,7 @@ Useful target fields:
 - `files`: glob patterns to include in the target
 - `exclude`: files to ignore from that target
 - `compressions`: any of `raw`, `gzip`, `brotli`
+- `max_file_bytes`: maximum bytes to read from each matched file (default: `67108864`)
 - `limits`: absolute size thresholds (`max_bytes` is in bytes)
 - `ratchet`: relative rules such as `no_increase`
 - `badge`: how to render the published SVG badge; `badge.thresholds.warn_above`

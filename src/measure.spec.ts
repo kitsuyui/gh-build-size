@@ -55,4 +55,29 @@ describe('measureWorkspaceTargets', () => {
       process.chdir(previousCwd)
     }
   })
+
+  test('rejects workspace files that exceed max_file_bytes', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'gh-build-size-'))
+    tempDirs.push(dir)
+    await fs.mkdir(path.join(dir, 'dist'), { recursive: true })
+    await fs.writeFile(path.join(dir, 'dist', 'app.js'), 'abcd')
+    const previousCwd = process.cwd()
+    process.chdir(dir)
+
+    try {
+      await expect(
+        measureWorkspaceTargets([
+          {
+            id: 'web',
+            label: 'web',
+            files: ['dist/**/*.js'],
+            compressions: ['raw'],
+            max_file_bytes: 3,
+          },
+        ]),
+      ).rejects.toThrow('exceeds max_file_bytes')
+    } finally {
+      process.chdir(previousCwd)
+    }
+  })
 })

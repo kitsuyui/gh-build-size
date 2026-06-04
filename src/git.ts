@@ -3,6 +3,7 @@ import { promisify } from 'node:util'
 import * as github from '@actions/github'
 import micromatch from 'micromatch'
 
+import { assertFileWithinMaxBytes } from './limits'
 import type { RevisionReader } from './measure'
 import type { TargetConfig } from './types'
 
@@ -70,16 +71,27 @@ export function createGitRevisionReader(): RevisionReader {
       }
       return output.split('\n').filter(Boolean)
     },
-    async readFile(revision: string, filePath: string): Promise<Buffer> {
-      const { stdout } = await execFileAsync(
-        'git',
-        ['show', `${revision}:${filePath}`],
-        {
-          encoding: 'buffer',
-          maxBuffer: Infinity,
-        },
-      )
-      return Buffer.from(stdout)
+    async readFile(
+      revision: string,
+      filePath: string,
+      maxFileBytes: number,
+    ): Promise<Buffer> {
+      const objectName = `${revision}:${filePath}`
+      const sizeText = await execGit(['cat-file', '-s', objectName])
+      const byteLength = Number(sizeText)
+      if (!Number.isSafeInteger(byteLength) || byteLength < 0) {
+        throw new Error(
+          `Unable to determine the byte size of "${filePath}" at "${revision}".`,
+        )
+      }
+      assertFileWithinMaxBytes(filePath, byteLength, maxFileBytes)
+      const { stdout } = await execFileAsync('git', ['show', objectName], {
+        encoding: 'buffer',
+        maxBuffer: Math.min(maxFileBytes + 1, Number.MAX_SAFE_INTEGER),
+      })
+      const content = Buffer.from(stdout)
+      assertFileWithinMaxBytes(filePath, content.byteLength, maxFileBytes)
+      return content
     },
   }
 }

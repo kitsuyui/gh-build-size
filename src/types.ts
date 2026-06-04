@@ -36,6 +36,7 @@ export interface TargetConfig {
   files: string[]
   exclude?: string[]
   compressions?: Compression[]
+  max_file_bytes?: number
   limits?: Partial<Record<Compression, ThresholdConfig>>
   ratchet?: Partial<Record<Compression, RatchetConfig>>
   badge?: BadgeConfig
@@ -48,6 +49,7 @@ export interface WorkspacePackagesResolverConfig {
   include?: string[]
   exclude?: string[]
   compressions?: Compression[]
+  max_file_bytes?: number
   limits?: Partial<Record<Compression, ThresholdConfig>>
   ratchet?: Partial<Record<Compression, RatchetConfig>>
   badge?: BadgeConfig
@@ -164,6 +166,7 @@ export interface NormalizedConfig {
     TargetConfig & {
       label: string
       compressions: Compression[]
+      max_file_bytes: number
     }
   >
 }

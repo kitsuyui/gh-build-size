@@ -38188,12 +38188,19 @@ var require_dist = /* @__PURE__ */ __commonJSMin(((exports) => {
 }));
 
 //#endregion
-//#region src/schema.ts
+//#region src/limits.ts
 var import_dist = /* @__PURE__ */ __toESM(require_dist(), 1);
 var import_out = /* @__PURE__ */ __toESM(require_out(), 1);
 var import_ajv = /* @__PURE__ */ __toESM(require_ajv(), 1);
 var import_github = /* @__PURE__ */ __toESM(require_github(), 1);
 var import_core = /* @__PURE__ */ __toESM(require_core$2(), 1);
+const DEFAULT_MAX_FILE_BYTES = 64 * 1024 * 1024;
+function assertFileWithinMaxBytes(filePath, byteLength, maxFileBytes) {
+	if (byteLength > maxFileBytes) throw new Error(`File "${filePath}" is ${byteLength} bytes, which exceeds max_file_bytes (${maxFileBytes}).`);
+}
+
+//#endregion
+//#region src/schema.ts
 const CONFIG_SCHEMA_VERSION = 1;
 const PUBLISHED_SCHEMA_VERSION = 1;
 const compressions$2 = [
@@ -38353,6 +38360,10 @@ const schema = {
 						minItems: 1,
 						items: { enum: compressions$1 }
 					},
+					max_file_bytes: {
+						type: "integer",
+						minimum: 0
+					},
 					limits: {
 						type: "object",
 						additionalProperties: false,
@@ -38433,6 +38444,10 @@ const schema = {
 						type: "array",
 						minItems: 1,
 						items: { enum: compressions$1 }
+					},
+					max_file_bytes: {
+						type: "integer",
+						minimum: 0
 					},
 					limits: {
 						type: "object",
@@ -38536,7 +38551,8 @@ function normalizeTarget(target) {
 			"raw",
 			"gzip",
 			"brotli"
-		]
+		],
+		max_file_bytes: target.max_file_bytes ?? DEFAULT_MAX_FILE_BYTES
 	};
 }
 function slugifyTargetId(value) {
@@ -38552,6 +38568,7 @@ function workspacePackageTarget(resolver, packageDir) {
 		files: include.map((pattern) => path.posix.join(distDir, pattern)),
 		exclude: resolver.exclude?.map((pattern) => path.posix.join(distDir, pattern)),
 		compressions: resolver.compressions,
+		max_file_bytes: resolver.max_file_bytes,
 		limits: resolver.limits,
 		ratchet: resolver.ratchet,
 		badge: resolver.badge
@@ -38746,12 +38763,23 @@ function createGitRevisionReader() {
 			if (!output) return [];
 			return output.split("\n").filter(Boolean);
 		},
-		async readFile(revision, filePath) {
-			const { stdout } = await execFileAsync("git", ["show", `${revision}:${filePath}`], {
+		async readFile(revision, filePath, maxFileBytes) {
+			const objectName = `${revision}:${filePath}`;
+			const sizeText = await execGit([
+				"cat-file",
+				"-s",
+				objectName
+			]);
+			const byteLength = Number(sizeText);
+			if (!Number.isSafeInteger(byteLength) || byteLength < 0) throw new Error(`Unable to determine the byte size of "${filePath}" at "${revision}".`);
+			assertFileWithinMaxBytes(filePath, byteLength, maxFileBytes);
+			const { stdout } = await execFileAsync("git", ["show", objectName], {
 				encoding: "buffer",
-				maxBuffer: Infinity
+				maxBuffer: Math.min(maxFileBytes + 1, Number.MAX_SAFE_INTEGER)
 			});
-			return Buffer.from(stdout);
+			const content = Buffer.from(stdout);
+			assertFileWithinMaxBytes(filePath, content.byteLength, maxFileBytes);
+			return content;
 		}
 	};
 }
@@ -39530,6 +39558,8 @@ ${rows}
 //#endregion
 //#region src/github.ts
 const PUBLISH_BRANCH_MAX_ATTEMPTS = 3;
+const MANAGED_COMMENT_PAGE_SIZE = 100;
+const MANAGED_COMMENT_SEARCH_MAX_PAGES = 10;
 function isPermissionError(error) {
 	if (typeof error === "object" && error !== null && "status" in error && typeof error.status === "number") return [
 		401,
@@ -39545,17 +39575,28 @@ function isRefConflictError(error) {
 async function findManagedComments(octokit, marker) {
 	const issueNumber = import_github.context.payload.pull_request?.number;
 	if (!issueNumber) return [];
-	return (await octokit.paginate(octokit.rest.issues.listComments, {
+	const pages = octokit.paginate.iterator(octokit.rest.issues.listComments, {
 		...import_github.context.repo,
 		issue_number: issueNumber,
-		per_page: 100
-	})).flatMap((comment) => {
-		if (!comment.body?.includes(marker)) return [];
-		return [{
-			id: comment.id,
-			body: comment.body
-		}];
+		per_page: MANAGED_COMMENT_PAGE_SIZE
 	});
+	let searchedPages = 0;
+	for await (const page of pages) {
+		searchedPages += 1;
+		const comments = page.data.flatMap((comment) => {
+			if (!comment.body?.includes(marker)) return [];
+			return [{
+				id: comment.id,
+				body: comment.body
+			}];
+		});
+		if (comments.length > 0) return comments;
+		if (searchedPages >= MANAGED_COMMENT_SEARCH_MAX_PAGES) {
+			import_core.warning(`gh-build-size stopped searching pull request comments after ${MANAGED_COMMENT_SEARCH_MAX_PAGES} pages without finding its marker.`);
+			return [];
+		}
+	}
+	return [];
 }
 async function deleteDuplicateManagedComments(octokit, comments) {
 	for (const comment of comments.slice(1)) await octokit.rest.issues.deleteComment({
@@ -39760,10 +39801,16 @@ async function filesForWorkspace(target) {
 		unique: true
 	})).sort();
 }
+async function readWorkspaceFile(filePath, maxFileBytes) {
+	assertFileWithinMaxBytes(filePath, (await fs.stat(filePath)).size, maxFileBytes);
+	const content = await fs.readFile(filePath);
+	assertFileWithinMaxBytes(filePath, content.byteLength, maxFileBytes);
+	return content;
+}
 function filesForRevision(allFiles, target) {
 	return (0, import_micromatch.default)(allFiles, target.files, { ignore: target.exclude ?? [] }).sort();
 }
-async function measureFiles(files, compressions, readFile) {
+async function measureFiles(files, compressions, maxFileBytes, readFile) {
 	const totals = {
 		raw: 0,
 		gzip: 0,
@@ -39771,7 +39818,8 @@ async function measureFiles(files, compressions, readFile) {
 	};
 	const measuredFiles = [];
 	for (const filePath of files) {
-		const content = await readFile(filePath);
+		const content = await readFile(filePath, maxFileBytes);
+		assertFileWithinMaxBytes(filePath, content.byteLength, maxFileBytes);
 		const sizes = {
 			raw: 0,
 			gzip: 0,
@@ -39794,7 +39842,9 @@ async function measureFiles(files, compressions, readFile) {
 }
 async function measureWorkspaceTargets(targets) {
 	return Promise.all(targets.map(async (target) => {
-		const measured = await measureFiles(await filesForWorkspace(target), target.compressions, (filePath) => fs.readFile(filePath));
+		const files = await filesForWorkspace(target);
+		const maxFileBytes = target.max_file_bytes ?? DEFAULT_MAX_FILE_BYTES;
+		const measured = await measureFiles(files, target.compressions, maxFileBytes, readWorkspaceFile);
 		return {
 			schema_version: PUBLISHED_SCHEMA_VERSION,
 			id: target.id,
@@ -39807,7 +39857,9 @@ async function measureWorkspaceTargets(targets) {
 async function measureRevisionTargets(revision, targets, reader) {
 	const revisionFiles = await reader.listFiles(revision);
 	return Promise.all(targets.map(async (target) => {
-		const measured = await measureFiles(filesForRevision(revisionFiles, target), target.compressions, (filePath) => reader.readFile(revision, filePath));
+		const files = filesForRevision(revisionFiles, target);
+		const maxFileBytes = target.max_file_bytes ?? DEFAULT_MAX_FILE_BYTES;
+		const measured = await measureFiles(files, target.compressions, maxFileBytes, (filePath, limit) => reader.readFile(revision, filePath, limit));
 		return {
 			schema_version: PUBLISHED_SCHEMA_VERSION,
 			id: target.id,
