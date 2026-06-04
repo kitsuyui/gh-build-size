@@ -5,9 +5,9 @@
   "publish_branch": "gh-build-size-assets",
   "event_name": "push",
   "base_label": "main",
-  "base_reference": "f7c4008cff772b41bd5dc0d2410260acbe25d64c",
+  "base_reference": "ddd7187f67fa40122c221ba9c606f24b226620a3",
   "head_label": "main",
-  "head_reference": "ddd7187f67fa40122c221ba9c606f24b226620a3",
+  "head_reference": "e42f7c86b2aa8ea137b8844beccd5f44c7927aa0",
   "targets": [
     {
       "id": "total",
@@ -24,20 +24,20 @@
         "raw": {
           "enabled": true,
           "current": 4345890,
-          "base": 4338137,
-          "delta": 7753
+          "base": 4345890,
+          "delta": 0
         },
         "gzip": {
           "enabled": true,
           "current": 960168,
-          "base": 958119,
-          "delta": 2049
+          "base": 960168,
+          "delta": 0
         },
         "brotli": {
           "enabled": true,
           "current": 763656,
-          "base": 762697,
-          "delta": 959
+          "base": 763656,
+          "delta": 0
         }
       },
       "violations": [],
@@ -57,30 +57,23 @@
         "raw": {
           "enabled": true,
           "current": 1567429,
-          "base": 1565227,
-          "delta": 2202
+          "base": 1567429,
+          "delta": 0
         },
         "gzip": {
           "enabled": true,
           "current": 350792,
-          "base": 350191,
-          "delta": 601
+          "base": 350792,
+          "delta": 0
         },
         "brotli": {
           "enabled": true,
           "current": 277825,
-          "base": 277887,
-          "delta": -62
+          "base": 277825,
+          "delta": 0
         }
       },
-      "violations": [
-        {
-          "compression": "gzip",
-          "kind": "no_increase",
-          "message": "350792 B increased from 350191 B",
-          "fail": false
-        }
-      ],
+      "violations": [],
       "badge_path": ".gh-build-size/badges/runtime.svg",
       "target_path": ".gh-build-size/targets/runtime.json"
     },
@@ -97,20 +90,20 @@
         "raw": {
           "enabled": true,
           "current": 2778450,
-          "base": 2772899,
-          "delta": 5551
+          "base": 2778450,
+          "delta": 0
         },
         "gzip": {
           "enabled": true,
           "current": 609345,
-          "base": 607897,
-          "delta": 1448
+          "base": 609345,
+          "delta": 0
         },
         "brotli": {
           "enabled": true,
           "current": 485816,
-          "base": 484795,
-          "delta": 1021
+          "base": 485816,
+          "delta": 0
         }
       },
       "violations": [],
