@@ -233,3 +233,30 @@ This repository also includes a small standard CI set:
 - `.github/workflows/octocov.yml`: publish coverage and code-to-test ratio with
   `octocov`
 - `.github/workflows/spellcheck.yml`: run `typos` on pull requests
+
+## Development
+
+This repository uses [lefthook](https://github.com/evilmartians/lefthook) to
+run the same checks locally that CI runs in the cloud, giving you faster
+feedback before pushing.
+
+### Setup
+
+```sh
+lefthook install
+```
+
+### Hooks
+
+**pre-commit** runs:
+
+- `bun run lint` — Biome static analysis and formatting check
+
+**pre-push** runs:
+
+- `bun run lint` — Biome static analysis and formatting check
+- `bun run test` — Vitest unit tests with coverage
+
+CI still runs the full suite (lint, test, and build) on every pull request and
+push to `main`. The local hooks bring that feedback earlier so you catch issues
+before they reach CI.
