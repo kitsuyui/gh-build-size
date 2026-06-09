@@ -1,0 +1,4 @@
+echo 'node_modules/'
+echo '.gh-build-size/'
+echo 'coverage/'
+echo '.tmp/'
