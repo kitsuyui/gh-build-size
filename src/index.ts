@@ -21,7 +21,7 @@ import {
 import { measureRevisionTargets, measureWorkspaceTargets } from './measure'
 import { PUBLISHED_SCHEMA_VERSION } from './schema'
 
-import type { FilesSnapshot, SummaryStatus } from './types'
+import type { Compression, FilesSnapshot, SummaryStatus } from './types'
 
 async function resolveDefaultBranch(configDefault?: string): Promise<string> {
   return (
@@ -66,6 +66,19 @@ function buildSummary(
   }
 }
 
+const ALL_COMPRESSIONS: Compression[] = ['raw', 'gzip', 'brotli']
+
+function mergeFileSizes(
+  existing: Record<Compression, number>,
+  incoming: Record<Compression, number>,
+): Record<Compression, number> {
+  const merged = {} as Record<Compression, number>
+  for (const c of ALL_COMPRESSIONS) {
+    merged[c] = existing[c] !== 0 ? existing[c] : incoming[c]
+  }
+  return merged
+}
+
 function buildFilesSnapshot(
   defaultBranch: string,
   publishBranch: string | null,
@@ -76,7 +89,15 @@ function buildFilesSnapshot(
 
   for (const snapshot of snapshots) {
     for (const file of snapshot.files) {
-      files.set(file.path, file)
+      const existing = files.get(file.path)
+      if (existing && existing.sizes !== null && file.sizes !== null) {
+        files.set(file.path, {
+          ...file,
+          sizes: mergeFileSizes(existing.sizes, file.sizes),
+        })
+      } else {
+        files.set(file.path, file)
+      }
     }
   }
 
