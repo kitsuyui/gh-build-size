@@ -93,6 +93,19 @@ That setup gives you:
 - a failing workflow if gzip size goes above `180000` bytes
 - a published badge and report on `gh-build-size-assets`
 
+## Action inputs
+
+The action accepts these workflow inputs:
+
+| Input | Required | Default | Description |
+| --- | --- | --- | --- |
+| `github-token` | Yes | | GitHub token used for pull request comments and branch publishing |
+| `config-path` | No | `.github/gh-build-size.yml` | Path to the gh-build-size YAML or JSON config file |
+| `default-branch` | No | Repository default branch, otherwise `main` | Override the repository default branch |
+| `publish-branch` | No | Configured `publish.branch`, otherwise `gh-build-size` | Override the publish branch configured in the file |
+| `comment-key` | No | Configured `comment.key`, otherwise `default` | Override the HTML marker key used for idempotent pull request comments |
+| `output-dir` | No | `.gh-build-size` | Directory used to write generated summary, file snapshot, report, target JSON, and badges |
+
 ## How it behaves
 
 On pull requests:
