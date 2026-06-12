@@ -39572,7 +39572,19 @@ function isRefConflictError(error) {
 	if (typeof error === "object" && error !== null && "status" in error && typeof error.status === "number") return [409, 422].includes(error.status);
 	return false;
 }
-async function findManagedComments(octokit, marker) {
+async function getManagedCommentAuthor(octokit) {
+	const response = await octokit.rest.users.getAuthenticated();
+	return {
+		id: response.data.id,
+		login: response.data.login
+	};
+}
+function isManagedCommentAuthor(user, author) {
+	if (!user) return false;
+	if (typeof user.id === "number" && user.id === author.id) return true;
+	return user.login === author.login;
+}
+async function findManagedComments(octokit, marker, author) {
 	const issueNumber = import_github.context.payload.pull_request?.number;
 	if (!issueNumber) return [];
 	const pages = octokit.paginate.iterator(octokit.rest.issues.listComments, {
@@ -39585,6 +39597,7 @@ async function findManagedComments(octokit, marker) {
 		searchedPages += 1;
 		const comments = page.data.flatMap((comment) => {
 			if (!comment.body?.includes(marker)) return [];
+			if (!isManagedCommentAuthor(comment.user, author)) return [];
 			return [{
 				id: comment.id,
 				body: comment.body
@@ -39610,10 +39623,11 @@ async function updatePullRequestComment(octokit, summary, config) {
 	const marker = buildMarker(config.comment.key);
 	const body = summary.targets.some((target) => target.commentable) ? renderComment(summary, config.comment.template, marker) : null;
 	try {
-		let existingComments = await findManagedComments(octokit, marker);
+		const managedCommentAuthor = await getManagedCommentAuthor(octokit);
+		let existingComments = await findManagedComments(octokit, marker, managedCommentAuthor);
 		let action = decideCommentAction(existingComments[0] ?? null, body);
 		if (action.type === "create") {
-			existingComments = await findManagedComments(octokit, marker);
+			existingComments = await findManagedComments(octokit, marker, managedCommentAuthor);
 			action = decideCommentAction(existingComments[0] ?? null, body);
 		}
 		if (action.type === "create") await octokit.rest.issues.createComment({
@@ -39899,9 +39913,26 @@ function buildSummary(defaultBranch, publishBranch, baseLabel, baseReference, he
 		targets
 	};
 }
+const ALL_COMPRESSIONS = [
+	"raw",
+	"gzip",
+	"brotli"
+];
+function mergeFileSizes(existing, incoming) {
+	const merged = {};
+	for (const c of ALL_COMPRESSIONS) merged[c] = existing[c] !== 0 ? existing[c] : incoming[c];
+	return merged;
+}
 function buildFilesSnapshot(defaultBranch, publishBranch, headReference, snapshots) {
 	const files = /* @__PURE__ */ new Map();
-	for (const snapshot of snapshots) for (const file of snapshot.files) files.set(file.path, file);
+	for (const snapshot of snapshots) for (const file of snapshot.files) {
+		const existing = files.get(file.path);
+		if (existing && existing.sizes !== null && file.sizes !== null) files.set(file.path, {
+			...file,
+			sizes: mergeFileSizes(existing.sizes, file.sizes)
+		});
+		else files.set(file.path, file);
+	}
 	return {
 		schema_version: PUBLISHED_SCHEMA_VERSION,
 		repository: import_github.context.payload.repository?.full_name ?? "",
