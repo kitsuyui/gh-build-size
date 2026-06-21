@@ -1,6 +1,5 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import * as github from '@actions/github'
 import micromatch from 'micromatch'
 
 import { assertFileWithinMaxBytes } from './limits'
@@ -22,8 +21,8 @@ export async function currentHeadReference(): Promise<string> {
 
 export async function resolvePullRequestBaseReference(
   defaultBranch: string,
+  baseSha: string | undefined,
 ): Promise<string> {
-  const baseSha = github.context.payload.pull_request?.base?.sha
   if (baseSha) {
     return execGit(['merge-base', baseSha, 'HEAD'])
   }

@@ -5,11 +5,8 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-import {
-  publishAssets,
-  updatePullRequestComment,
-  writeOutputFiles,
-} from './github'
+import { publishAssets, updatePullRequestComment } from './github'
+import { writeOutputFiles } from './output'
 
 import type { FilesSnapshot, NormalizedConfig, SummaryStatus } from './types'
 
