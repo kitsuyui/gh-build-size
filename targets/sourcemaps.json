@@ -6,15 +6,15 @@
     {
       "path": "dist/index.mjs.map",
       "sizes": {
-        "raw": 2779457,
-        "gzip": 609593,
-        "brotli": 485956
+        "raw": 2780766,
+        "gzip": 609888,
+        "brotli": 486199
       }
     }
   ],
   "totals": {
-    "raw": 2779457,
-    "gzip": 609593,
-    "brotli": 485956
+    "raw": 2780766,
+    "gzip": 609888,
+    "brotli": 486199
   }
 }
