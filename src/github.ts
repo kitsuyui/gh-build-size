@@ -22,6 +22,8 @@ const PUBLISH_BRANCH_MAX_ATTEMPTS = 3
 const MANAGED_COMMENT_PAGE_SIZE = 100
 const MANAGED_COMMENT_SEARCH_MAX_PAGES = 10
 type ManagedComment = { id: number; body: string }
+type ManagedCommentAuthor = { id: number; login: string }
+type CommentUser = { id?: number; login?: string } | null | undefined
 
 function isPermissionError(error: unknown): boolean {
   if (
@@ -47,9 +49,33 @@ function isRefConflictError(error: unknown): boolean {
   return false
 }
 
+async function getManagedCommentAuthor(
+  octokit: Octokit,
+): Promise<ManagedCommentAuthor> {
+  const response = await octokit.rest.users.getAuthenticated()
+  return {
+    id: response.data.id,
+    login: response.data.login,
+  }
+}
+
+function isManagedCommentAuthor(
+  user: CommentUser,
+  author: ManagedCommentAuthor,
+): boolean {
+  if (!user) {
+    return false
+  }
+  if (typeof user.id === 'number' && user.id === author.id) {
+    return true
+  }
+  return user.login === author.login
+}
+
 async function findManagedComments(
   octokit: Octokit,
   marker: string,
+  author: ManagedCommentAuthor,
 ): Promise<ManagedComment[]> {
   const issueNumber = github.context.payload.pull_request?.number
   if (!issueNumber) {
@@ -66,6 +92,9 @@ async function findManagedComments(
     searchedPages += 1
     const comments = page.data.flatMap((comment) => {
       if (!comment.body?.includes(marker)) {
+        return []
+      }
+      if (!isManagedCommentAuthor(comment.user, author)) {
         return []
       }
       return [{ id: comment.id, body: comment.body }]
@@ -111,10 +140,19 @@ export async function updatePullRequestComment(
     : null
 
   try {
-    let existingComments = await findManagedComments(octokit, marker)
+    const managedCommentAuthor = await getManagedCommentAuthor(octokit)
+    let existingComments = await findManagedComments(
+      octokit,
+      marker,
+      managedCommentAuthor,
+    )
     let action = decideCommentAction(existingComments[0] ?? null, body)
     if (action.type === 'create') {
-      existingComments = await findManagedComments(octokit, marker)
+      existingComments = await findManagedComments(
+        octokit,
+        marker,
+        managedCommentAuthor,
+      )
       action = decideCommentAction(existingComments[0] ?? null, body)
     }
 
