@@ -24,14 +24,15 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Lint
-        run: bun run lint
+      - parallel:
+          - name: Lint
+            run: bun run lint
 
-      - name: Test
-        run: bun run test
+          - name: Test
+            run: bun run test
 
-      - name: Build
-        run: bun run build
+          - name: Build
+            run: bun run build
 
       - name: Report coverage with octocov
         uses: k1LoW/octocov-action@b3b6ee60482a667950f87553abf1df63217235d9 # v1
