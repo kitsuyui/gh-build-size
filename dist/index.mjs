@@ -39571,7 +39571,19 @@ function isRefConflictError(error) {
 	if (typeof error === "object" && error !== null && "status" in error && typeof error.status === "number") return [409, 422].includes(error.status);
 	return false;
 }
-async function findManagedComments(octokit, marker) {
+async function getManagedCommentAuthor(octokit) {
+	const response = await octokit.rest.users.getAuthenticated();
+	return {
+		id: response.data.id,
+		login: response.data.login
+	};
+}
+function isManagedCommentAuthor(user, author) {
+	if (!user) return false;
+	if (typeof user.id === "number" && user.id === author.id) return true;
+	return user.login === author.login;
+}
+async function findManagedComments(octokit, marker, author) {
 	const issueNumber = import_github.context.payload.pull_request?.number;
 	if (!issueNumber) return [];
 	const pages = octokit.paginate.iterator(octokit.rest.issues.listComments, {
@@ -39584,6 +39596,7 @@ async function findManagedComments(octokit, marker) {
 		searchedPages += 1;
 		const comments = page.data.flatMap((comment) => {
 			if (!comment.body?.includes(marker)) return [];
+			if (!isManagedCommentAuthor(comment.user, author)) return [];
 			return [{
 				id: comment.id,
 				body: comment.body
@@ -39609,10 +39622,11 @@ async function updatePullRequestComment(octokit, summary, config) {
 	const marker = buildMarker(config.comment.key);
 	const body = summary.targets.some((target) => target.commentable) ? renderComment(summary, config.comment.template, marker) : null;
 	try {
-		let existingComments = await findManagedComments(octokit, marker);
+		const managedCommentAuthor = await getManagedCommentAuthor(octokit);
+		let existingComments = await findManagedComments(octokit, marker, managedCommentAuthor);
 		let action = decideCommentAction(existingComments[0] ?? null, body);
 		if (action.type === "create") {
-			existingComments = await findManagedComments(octokit, marker);
+			existingComments = await findManagedComments(octokit, marker, managedCommentAuthor);
 			action = decideCommentAction(existingComments[0] ?? null, body);
 		}
 		if (action.type === "create") await octokit.rest.issues.createComment({

@@ -70,6 +70,18 @@ const config: NormalizedConfig = {
   targets: [],
 }
 
+const githubActionsBot = {
+  id: 41898282,
+  login: 'github-actions[bot]',
+  type: 'Bot',
+}
+
+const pullRequestUser = {
+  id: 12345,
+  login: 'octocat',
+  type: 'User',
+}
+
 function createOctokit() {
   return {
     paginate: createPaginateMock(),
@@ -87,6 +99,11 @@ function createOctokit() {
         updateComment: vi.fn(),
         deleteComment: vi.fn(),
       },
+      users: {
+        getAuthenticated: vi.fn().mockResolvedValue({
+          data: githubActionsBot,
+        }),
+      },
     },
   } as unknown as Parameters<typeof publishAssets>[0] &
     Parameters<typeof updatePullRequestComment>[0]
@@ -103,7 +120,13 @@ function createPaginateMock(): ReturnType<typeof vi.fn> & {
 }
 
 async function* commentPages(
-  pages: Array<Array<{ id: number; body?: string | null }>>,
+  pages: Array<
+    Array<{
+      id: number
+      body?: string | null
+      user?: { id: number; login: string; type: string } | null
+    }>
+  >,
 ) {
   for (const data of pages) {
     yield { data }
@@ -296,9 +319,17 @@ describe('updatePullRequestComment', () => {
     mockFn(octokit.paginate.iterator).mockReturnValue(
       commentPages([
         [
-          { id: 1, body: '<!-- gh-build-size:gh-build-size -->\nold body' },
-          { id: 2, body: '<!-- gh-build-size:gh-build-size -->\nduplicate' },
-          { id: 3, body: 'unmanaged comment' },
+          {
+            id: 1,
+            body: '<!-- gh-build-size:gh-build-size -->\nold body',
+            user: githubActionsBot,
+          },
+          {
+            id: 2,
+            body: '<!-- gh-build-size:gh-build-size -->\nduplicate',
+            user: githubActionsBot,
+          },
+          { id: 3, body: 'unmanaged comment', user: pullRequestUser },
         ],
       ]),
     )
@@ -333,6 +364,7 @@ describe('updatePullRequestComment', () => {
             {
               id: 4,
               body: '<!-- gh-build-size:gh-build-size -->\nraced body',
+              user: githubActionsBot,
             },
           ],
         ]),
@@ -360,13 +392,21 @@ describe('updatePullRequestComment', () => {
     async function* pages() {
       yield {
         data: [
-          { id: 1, body: '<!-- gh-build-size:gh-build-size -->\nold body' },
+          {
+            id: 1,
+            body: '<!-- gh-build-size:gh-build-size -->\nold body',
+            user: githubActionsBot,
+          },
         ],
       }
       secondPageVisited()
       yield {
         data: [
-          { id: 2, body: '<!-- gh-build-size:gh-build-size -->\nduplicate' },
+          {
+            id: 2,
+            body: '<!-- gh-build-size:gh-build-size -->\nduplicate',
+            user: githubActionsBot,
+          },
         ],
       }
     }
@@ -384,5 +424,71 @@ describe('updatePullRequestComment', () => {
         comment_id: 1,
       }),
     )
+  })
+
+  test('ignores marker comments from other users before creating its own comment', async () => {
+    const octokit = createOctokit()
+    const attackerComment = {
+      id: 10,
+      body: '<!-- gh-build-size:gh-build-size -->\nattacker body',
+      user: pullRequestUser,
+    }
+    mockFn(octokit.paginate.iterator)
+      .mockReturnValueOnce(commentPages([[attackerComment]]))
+      .mockReturnValueOnce(commentPages([[attackerComment]]))
+
+    await updatePullRequestComment(
+      octokit,
+      createCommentableSummary(),
+      commentConfig,
+    )
+
+    expect(octokit.rest.issues.createComment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        issue_number: 123,
+        body: '<!-- gh-build-size:gh-build-size -->\nupdated body',
+      }),
+    )
+    expect(octokit.rest.issues.updateComment).not.toHaveBeenCalled()
+    expect(octokit.rest.issues.deleteComment).not.toHaveBeenCalled()
+  })
+
+  test('updates the authenticated managed comment when another user has the marker first', async () => {
+    const octokit = createOctokit()
+    mockFn(octokit.paginate.iterator).mockReturnValue(
+      commentPages([
+        [
+          {
+            id: 10,
+            body: '<!-- gh-build-size:gh-build-size -->\nattacker body',
+            user: pullRequestUser,
+          },
+          {
+            id: 11,
+            body: '<!-- gh-build-size:gh-build-size -->\nold body',
+            user: githubActionsBot,
+          },
+        ],
+      ]),
+    )
+
+    await updatePullRequestComment(
+      octokit,
+      createCommentableSummary(),
+      commentConfig,
+    )
+
+    expect(octokit.rest.issues.updateComment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        comment_id: 11,
+        body: '<!-- gh-build-size:gh-build-size -->\nupdated body',
+      }),
+    )
+    expect(octokit.rest.issues.deleteComment).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        comment_id: 10,
+      }),
+    )
+    expect(octokit.rest.issues.createComment).not.toHaveBeenCalled()
   })
 })
