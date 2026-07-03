@@ -4,7 +4,7 @@
   "default_branch": "main",
   "publish_branch": "gh-build-size-assets",
   "event_name": "push",
-  "head_reference": "7c652e76d8da48f28d1527d47665afdf5b103734",
+  "head_reference": "fea7c2f8e039cf69964430ebb359e37dc6abb2f2",
   "files": [
     {
       "path": "dist/index.d.mts",
@@ -17,17 +17,17 @@
     {
       "path": "dist/index.mjs",
       "sizes": {
-        "raw": 1568432,
-        "gzip": 351048,
-        "brotli": 278143
+        "raw": 1568462,
+        "gzip": 351049,
+        "brotli": 278136
       }
     },
     {
       "path": "dist/index.mjs.map",
       "sizes": {
-        "raw": 2780766,
-        "gzip": 609888,
-        "brotli": 486199
+        "raw": 2781081,
+        "gzip": 609894,
+        "brotli": 486371
       }
     }
   ]
