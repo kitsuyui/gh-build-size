@@ -8,6 +8,7 @@
   "type": "module",
   "scripts": {
     "build": "tsdown",
+    "check:dist": "bun run build && git diff --exit-code dist/",
     "test": "vitest run --coverage",
     "lint": "biome check ./",
     "format": "biome check --write ./"
