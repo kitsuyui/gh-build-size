@@ -16,9 +16,9 @@ import {
   fetchPublishedSummary,
   publishAssets,
   updatePullRequestComment,
-  writeOutputFiles,
 } from './github'
 import { measureRevisionTargets, measureWorkspaceTargets } from './measure'
+import { writeOutputFiles } from './output'
 import { PUBLISHED_SCHEMA_VERSION } from './schema'
 
 import type { Compression, FilesSnapshot, SummaryStatus } from './types'
@@ -131,7 +131,10 @@ async function run(): Promise<void> {
   let publishedTargetIds: Set<string> | null = null
 
   if (github.context.eventName === 'pull_request') {
-    baseReference = await resolvePullRequestBaseReference(defaultBranch)
+    baseReference = await resolvePullRequestBaseReference(
+      defaultBranch,
+      github.context.payload.pull_request?.base?.sha,
+    )
     changedFiles = await listChangedFiles(baseReference)
     baseSnapshots = await measureRevisionTargets(
       baseReference,

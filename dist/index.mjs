@@ -38713,8 +38713,7 @@ async function execGit(args) {
 async function currentHeadReference() {
 	return execGit(["rev-parse", "HEAD"]);
 }
-async function resolvePullRequestBaseReference(defaultBranch) {
-	const baseSha = import_github.context.payload.pull_request?.base?.sha;
+async function resolvePullRequestBaseReference(defaultBranch, baseSha) {
 	if (baseSha) return execGit([
 		"merge-base",
 		baseSha,
@@ -39765,38 +39764,6 @@ async function publishAssets(octokit, summary, filesSnapshot, targetStatuses, sn
 		throw error;
 	}
 }
-async function writeOutputFiles(outputDir, summary, filesSnapshot, targetStatuses, snapshots, config) {
-	const stagingDir = `${outputDir}.tmp`;
-	await fs.rm(stagingDir, {
-		recursive: true,
-		force: true
-	});
-	await fs.mkdir(stagingDir, { recursive: true });
-	await fs.mkdir(path.join(stagingDir, "badges"), { recursive: true });
-	await fs.mkdir(path.join(stagingDir, "targets"), { recursive: true });
-	const summaryPath = path.join(outputDir, "summary.json");
-	const filesPath = path.join(outputDir, "files.json");
-	const reportPath = path.join(outputDir, "report.md");
-	await fs.writeFile(path.join(stagingDir, "summary.json"), `${JSON.stringify(summary, null, 2)}\n`);
-	await fs.writeFile(path.join(stagingDir, "files.json"), `${JSON.stringify(filesSnapshot, null, 2)}\n`);
-	await fs.writeFile(path.join(stagingDir, "report.md"), renderReportMarkdown(filesSnapshot));
-	for (const target of targetStatuses) {
-		const targetConfig = config.targets.find((item) => item.id === target.id);
-		const snapshot = snapshots.find((item) => item.id === target.id);
-		if (!targetConfig || !snapshot) continue;
-		await fs.writeFile(path.join(stagingDir, "badges", `${target.id}.svg`), renderBadge(target, targetConfig.badge));
-		await fs.writeFile(path.join(stagingDir, "targets", `${target.id}.json`), `${JSON.stringify(snapshot, null, 2)}\n`);
-	}
-	await fs.rm(outputDir, {
-		recursive: true,
-		force: true
-	});
-	await fs.rename(stagingDir, outputDir);
-	import_core.setOutput("summary-path", summaryPath);
-	import_core.setOutput("files-path", filesPath);
-	import_core.setOutput("report-path", reportPath);
-	import_core.setOutput("summary-json", JSON.stringify(summary));
-}
 
 //#endregion
 //#region src/measure.ts
@@ -39885,6 +39852,41 @@ async function measureRevisionTargets(revision, targets, reader) {
 }
 
 //#endregion
+//#region src/output.ts
+async function writeOutputFiles(outputDir, summary, filesSnapshot, targetStatuses, snapshots, config) {
+	const stagingDir = `${outputDir}.tmp`;
+	await fs.rm(stagingDir, {
+		recursive: true,
+		force: true
+	});
+	await fs.mkdir(stagingDir, { recursive: true });
+	await fs.mkdir(path.join(stagingDir, "badges"), { recursive: true });
+	await fs.mkdir(path.join(stagingDir, "targets"), { recursive: true });
+	const summaryPath = path.join(outputDir, "summary.json");
+	const filesPath = path.join(outputDir, "files.json");
+	const reportPath = path.join(outputDir, "report.md");
+	await fs.writeFile(path.join(stagingDir, "summary.json"), `${JSON.stringify(summary, null, 2)}\n`);
+	await fs.writeFile(path.join(stagingDir, "files.json"), `${JSON.stringify(filesSnapshot, null, 2)}\n`);
+	await fs.writeFile(path.join(stagingDir, "report.md"), renderReportMarkdown(filesSnapshot));
+	for (const target of targetStatuses) {
+		const targetConfig = config.targets.find((item) => item.id === target.id);
+		const snapshot = snapshots.find((item) => item.id === target.id);
+		if (!targetConfig || !snapshot) continue;
+		await fs.writeFile(path.join(stagingDir, "badges", `${target.id}.svg`), renderBadge(target, targetConfig.badge));
+		await fs.writeFile(path.join(stagingDir, "targets", `${target.id}.json`), `${JSON.stringify(snapshot, null, 2)}\n`);
+	}
+	await fs.rm(outputDir, {
+		recursive: true,
+		force: true
+	});
+	await fs.rename(stagingDir, outputDir);
+	import_core.setOutput("summary-path", summaryPath);
+	import_core.setOutput("files-path", filesPath);
+	import_core.setOutput("report-path", reportPath);
+	import_core.setOutput("summary-json", JSON.stringify(summary));
+}
+
+//#endregion
 //#region src/index.ts
 async function resolveDefaultBranch(configDefault) {
 	return configDefault ?? import_github.context.payload.repository?.default_branch ?? "main";
@@ -39957,7 +39959,7 @@ async function run() {
 	let changedFiles = [];
 	let publishedTargetIds = null;
 	if (import_github.context.eventName === "pull_request") {
-		baseReference = await resolvePullRequestBaseReference(defaultBranch);
+		baseReference = await resolvePullRequestBaseReference(defaultBranch, import_github.context.payload.pull_request?.base?.sha);
 		changedFiles = await listChangedFiles(baseReference);
 		baseSnapshots = await measureRevisionTargets(baseReference, config.targets, createGitRevisionReader());
 		if (config.publish.enabled) {
