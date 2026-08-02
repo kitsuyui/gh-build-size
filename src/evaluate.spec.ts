@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import { evaluateTargets } from './evaluate'
+import { countFailingViolations, evaluateTargets } from './evaluate'
 import type { NormalizedConfig, TargetSnapshot } from './types'
 
 const config: NormalizedConfig = {
@@ -67,6 +67,24 @@ const baseSnapshots: TargetSnapshot[] = [
     },
   },
 ]
+
+function createSnapshot(
+  totals: TargetSnapshot['totals'],
+  filePath = 'dist/app.js',
+): TargetSnapshot {
+  return {
+    schema_version: 1,
+    id: 'web',
+    label: 'web',
+    files: [
+      {
+        path: filePath,
+        sizes: totals,
+      },
+    ],
+    totals,
+  }
+}
 
 describe('evaluateTargets', () => {
   test('marks a target commentable on first measurement without touched files', () => {
@@ -137,5 +155,94 @@ describe('evaluateTargets', () => {
 
     expect(target?.baseline_missing).toBe(false)
     expect(target?.commentable).toBe(true)
+  })
+
+  test('reports limit and no_increase violations and counts only failing ones', () => {
+    const configWithBudgetRules: NormalizedConfig = {
+      ...config,
+      targets: [
+        {
+          ...config.targets[0],
+          limits: {
+            raw: {
+              max_bytes: 100,
+              fail: false,
+            },
+          },
+          ratchet: {
+            gzip: {
+              no_increase: true,
+              fail: true,
+            },
+          },
+        },
+      ],
+    }
+
+    const [target] = evaluateTargets(
+      configWithBudgetRules,
+      [createSnapshot({ raw: 120, gzip: 70, brotli: 55 })],
+      [createSnapshot({ raw: 90, gzip: 60, brotli: 50 })],
+      new Map([['web', ['dist/app.js']]]),
+      new Set(['web']),
+      true,
+    )
+
+    expect(target?.violations).toEqual([
+      {
+        compression: 'raw',
+        kind: 'limit',
+        message: '120 B exceeds limit 100 B',
+        fail: false,
+      },
+      {
+        compression: 'gzip',
+        kind: 'no_increase',
+        message: '70 B increased from 60 B',
+        fail: true,
+      },
+    ])
+    expect(target).toBeDefined()
+    expect(countFailingViolations(target ? [target] : [])).toBe(1)
+  })
+
+  test('disables sizes for compressions not configured on the target', () => {
+    const configWithRawOnly: NormalizedConfig = {
+      ...config,
+      targets: [
+        {
+          ...config.targets[0],
+          compressions: ['raw'],
+        },
+      ],
+    }
+
+    const [target] = evaluateTargets(
+      configWithRawOnly,
+      currentSnapshots,
+      baseSnapshots,
+      new Map([['web', ['dist/app.js']]]),
+      new Set(['web']),
+      true,
+    )
+
+    expect(target?.sizes.raw).toEqual({
+      enabled: true,
+      current: 120,
+      base: 0,
+      delta: 120,
+    })
+    expect(target?.sizes.gzip).toEqual({
+      enabled: false,
+      current: 0,
+      base: null,
+      delta: null,
+    })
+    expect(target?.sizes.brotli).toEqual({
+      enabled: false,
+      current: 0,
+      base: null,
+      delta: null,
+    })
   })
 })
