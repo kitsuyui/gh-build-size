@@ -5,7 +5,7 @@ export default defineConfig({
   format: 'esm',
   platform: 'node',
   clean: true,
-  dts: true,
+  dts: false,
   sourcemap: true,
   inlineOnly: false,
   noExternal: [/.*/],
