@@ -23,7 +23,7 @@
     "yaml": "^2.8.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.13",
+    "@biomejs/biome": "^2.6.3",
     "@types/mustache": "^4.2.6",
     "@types/node": "^24.5.2",
     "@vitest/coverage-v8": "^5.0.5",
