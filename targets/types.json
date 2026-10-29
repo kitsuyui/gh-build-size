@@ -2,19 +2,10 @@
   "schema_version": 1,
   "id": "types",
   "label": "Type declarations",
-  "files": [
-    {
-      "path": "dist/index.d.mts",
-      "sizes": {
-        "raw": 11,
-        "gzip": 31,
-        "brotli": 15
-      }
-    }
-  ],
+  "files": [],
   "totals": {
-    "raw": 11,
-    "gzip": 31,
-    "brotli": 15
+    "raw": 0,
+    "gzip": 0,
+    "brotli": 0
   }
 }

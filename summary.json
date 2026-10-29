@@ -5,15 +5,14 @@
   "publish_branch": "gh-build-size-assets",
   "event_name": "push",
   "base_label": "main",
-  "base_reference": "fd44c9be6fcf88688941e2f66fc77efac488432e",
+  "base_reference": "fecf9cdd1bfca581f40e9c30c8dd4eb8ea319e08",
   "head_label": "main",
-  "head_reference": "fecf9cdd1bfca581f40e9c30c8dd4eb8ea319e08",
+  "head_reference": "29f5274381e94343f7a794d91b156cec27a2aef1",
   "targets": [
     {
       "id": "total",
       "label": "Total dist",
       "files": [
-        "dist/index.d.mts",
         "dist/index.mjs",
         "dist/index.mjs.map"
       ],
@@ -23,21 +22,21 @@
       "sizes": {
         "raw": {
           "enabled": true,
-          "current": 4349554,
+          "current": 4349543,
           "base": 4349554,
-          "delta": 0
+          "delta": -11
         },
         "gzip": {
           "enabled": true,
-          "current": 960974,
+          "current": 960943,
           "base": 960974,
-          "delta": 0
+          "delta": -31
         },
         "brotli": {
           "enabled": true,
-          "current": 764522,
+          "current": 764507,
           "base": 764522,
-          "delta": 0
+          "delta": -15
         }
       },
       "violations": [],
@@ -113,30 +112,28 @@
     {
       "id": "types",
       "label": "Type declarations",
-      "files": [
-        "dist/index.d.mts"
-      ],
+      "files": [],
       "touched_files": [],
       "baseline_missing": false,
       "commentable": true,
       "sizes": {
         "raw": {
           "enabled": true,
-          "current": 11,
+          "current": 0,
           "base": 11,
-          "delta": 0
+          "delta": -11
         },
         "gzip": {
           "enabled": true,
-          "current": 31,
+          "current": 0,
           "base": 31,
-          "delta": 0
+          "delta": -31
         },
         "brotli": {
           "enabled": true,
-          "current": 15,
+          "current": 0,
           "base": 15,
-          "delta": 0
+          "delta": -15
         }
       },
       "violations": [],

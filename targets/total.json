@@ -4,14 +4,6 @@
   "label": "Total dist",
   "files": [
     {
-      "path": "dist/index.d.mts",
-      "sizes": {
-        "raw": 11,
-        "gzip": 31,
-        "brotli": 15
-      }
-    },
-    {
       "path": "dist/index.mjs",
       "sizes": {
         "raw": 1568462,
@@ -29,8 +21,8 @@
     }
   ],
   "totals": {
-    "raw": 4349554,
-    "gzip": 960974,
-    "brotli": 764522
+    "raw": 4349543,
+    "gzip": 960943,
+    "brotli": 764507
   }
 }

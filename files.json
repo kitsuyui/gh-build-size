@@ -4,16 +4,8 @@
   "default_branch": "main",
   "publish_branch": "gh-build-size-assets",
   "event_name": "push",
-  "head_reference": "fecf9cdd1bfca581f40e9c30c8dd4eb8ea319e08",
+  "head_reference": "29f5274381e94343f7a794d91b156cec27a2aef1",
   "files": [
-    {
-      "path": "dist/index.d.mts",
-      "sizes": {
-        "raw": 11,
-        "gzip": 31,
-        "brotli": 15
-      }
-    },
     {
       "path": "dist/index.mjs",
       "sizes": {
