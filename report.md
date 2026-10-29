@@ -1,7 +1,7 @@
 # gh-build-size report
 
 - Repository: **kitsuyui/gh-build-size**
-- Head: `20fc3148cf2adb861907eab5862143613e0eb26b`
+- Head: `fd44c9be6fcf88688941e2f66fc77efac488432e`
 
 | File | Raw | Gzip | Brotli |
 | --- | ---: | ---: | ---: |
