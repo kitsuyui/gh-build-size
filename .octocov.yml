@@ -4,9 +4,9 @@ coverage:
     - coverage/clover.xml
 codeToTestRatio:
   code:
-    - 'src/**/*.ts'
+    - "src/**/*.ts"
   test:
-    - 'src/**/*.spec.ts'
+    - "src/**/*.spec.ts"
 testExecutionTime:
   if: true
 diff:
