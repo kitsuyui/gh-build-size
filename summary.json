@@ -5,9 +5,9 @@
   "publish_branch": "gh-build-size-assets",
   "event_name": "push",
   "base_label": "main",
-  "base_reference": "fecf9cdd1bfca581f40e9c30c8dd4eb8ea319e08",
+  "base_reference": "29f5274381e94343f7a794d91b156cec27a2aef1",
   "head_label": "main",
-  "head_reference": "29f5274381e94343f7a794d91b156cec27a2aef1",
+  "head_reference": "f35d80fb9ea2ce88925d063b8299871968f88232",
   "targets": [
     {
       "id": "total",
@@ -23,20 +23,20 @@
         "raw": {
           "enabled": true,
           "current": 4349543,
-          "base": 4349554,
-          "delta": -11
+          "base": 4349543,
+          "delta": 0
         },
         "gzip": {
           "enabled": true,
           "current": 960943,
-          "base": 960974,
-          "delta": -31
+          "base": 960943,
+          "delta": 0
         },
         "brotli": {
           "enabled": true,
           "current": 764507,
-          "base": 764522,
-          "delta": -15
+          "base": 764507,
+          "delta": 0
         }
       },
       "violations": [],
@@ -120,20 +120,20 @@
         "raw": {
           "enabled": true,
           "current": 0,
-          "base": 11,
-          "delta": -11
+          "base": 0,
+          "delta": 0
         },
         "gzip": {
           "enabled": true,
           "current": 0,
-          "base": 31,
-          "delta": -31
+          "base": 0,
+          "delta": 0
         },
         "brotli": {
           "enabled": true,
           "current": 0,
-          "base": 15,
-          "delta": -15
+          "base": 0,
+          "delta": 0
         }
       },
       "violations": [],
