@@ -97,14 +97,14 @@ That setup gives you:
 
 The action accepts these workflow inputs:
 
-| Input | Required | Default | Description |
-| --- | --- | --- | --- |
-| `github-token` | Yes | | GitHub token used for pull request comments and branch publishing |
-| `config-path` | No | `.github/gh-build-size.yml` | Path to the gh-build-size YAML or JSON config file |
-| `default-branch` | No | Repository default branch, otherwise `main` | Override the repository default branch |
-| `publish-branch` | No | Configured `publish.branch`, otherwise `gh-build-size` | Override the publish branch configured in the file |
-| `comment-key` | No | Configured `comment.key`, otherwise `default` | Override the HTML marker key used for idempotent pull request comments |
-| `output-dir` | No | `.gh-build-size` | Directory used to write generated summary, file snapshot, report, target JSON, and badges |
+| Input            | Required | Default                                                | Description                                                                               |
+| ---------------- | -------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| `github-token`   | Yes      |                                                        | GitHub token used for pull request comments and branch publishing                         |
+| `config-path`    | No       | `.github/gh-build-size.yml`                            | Path to the gh-build-size YAML or JSON config file                                        |
+| `default-branch` | No       | Repository default branch, otherwise `main`            | Override the repository default branch                                                    |
+| `publish-branch` | No       | Configured `publish.branch`, otherwise `gh-build-size` | Override the publish branch configured in the file                                        |
+| `comment-key`    | No       | Configured `comment.key`, otherwise `default`          | Override the HTML marker key used for idempotent pull request comments                    |
+| `output-dir`     | No       | `.gh-build-size`                                       | Directory used to write generated summary, file snapshot, report, target JSON, and badges |
 
 ## How it behaves
 
@@ -194,15 +194,15 @@ older published data intentionally.
 
 The action sets these step outputs after it runs:
 
-| Output | Type | Description |
-| --- | --- | --- |
-| `summary-path` | `string` | Path to the generated summary JSON file |
-| `summary-json` | `string` | The generated summary JSON (serialised) |
-| `files-path` | `string` | Path to the generated files snapshot JSON |
-| `report-path` | `string` | Path to the generated report Markdown |
-| `violation-count` | `string` | Number of target/compression pairs that violated a failing condition |
-| `has-violations` | `string` | `"true"` if any failing condition was violated, `"false"` otherwise |
-| `publish-branch` | `string` | The publish branch used for generated assets (`""` when publishing is disabled) |
+| Output            | Type     | Description                                                                     |
+| ----------------- | -------- | ------------------------------------------------------------------------------- |
+| `summary-path`    | `string` | Path to the generated summary JSON file                                         |
+| `summary-json`    | `string` | The generated summary JSON (serialised)                                         |
+| `files-path`      | `string` | Path to the generated files snapshot JSON                                       |
+| `report-path`     | `string` | Path to the generated report Markdown                                           |
+| `violation-count` | `string` | Number of target/compression pairs that violated a failing condition            |
+| `has-violations`  | `string` | `"true"` if any failing condition was violated, `"false"` otherwise             |
+| `publish-branch`  | `string` | The publish branch used for generated assets (`""` when publishing is disabled) |
 
 Example — upload the report as an artifact:
 
