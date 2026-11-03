@@ -8,4 +8,4 @@ permissions:
 
 jobs:
   check:
-    uses: kitsuyui/gh-actions-workflows/.github/workflows/spellcheck.yml@785f862fe4e05af321ca7144b1f3a94b44edd31e # main
+    uses: kitsuyui/gh-actions-workflows/.github/workflows/spellcheck.yml@a5fa95bb99487d882f9abb26890878d6d5fc99a6 # main
