@@ -5,9 +5,9 @@
   "publish_branch": "gh-build-size-assets",
   "event_name": "push",
   "base_label": "main",
-  "base_reference": "f35d80fb9ea2ce88925d063b8299871968f88232",
+  "base_reference": "0ba80f63d8339118586839bfbb1c97e348b52a9b",
   "head_label": "main",
-  "head_reference": "0ba80f63d8339118586839bfbb1c97e348b52a9b",
+  "head_reference": "421df2fc49f4df0f35944dddac9a05a7a24391d9",
   "targets": [
     {
       "id": "total",
