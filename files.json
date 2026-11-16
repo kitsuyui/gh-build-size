@@ -4,7 +4,7 @@
   "default_branch": "main",
   "publish_branch": "gh-build-size-assets",
   "event_name": "push",
-  "head_reference": "c00f2c345b8164628e4358b2671f5d68b8a7615e",
+  "head_reference": "5428078f98bda31d02bfa8403de4e077ec92fa8b",
   "files": [
     {
       "path": "dist/index.mjs",
