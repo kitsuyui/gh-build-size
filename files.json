@@ -4,22 +4,22 @@
   "default_branch": "main",
   "publish_branch": "gh-build-size-assets",
   "event_name": "push",
-  "head_reference": "e969b4b0bc1b315d7907517e9355f21f74f2fae9",
+  "head_reference": "34971303fb489b55688b9fabe151526791194396",
   "files": [
     {
       "path": "dist/index.mjs",
       "sizes": {
-        "raw": 1568462,
-        "gzip": 351049,
-        "brotli": 278136
+        "raw": 1568959,
+        "gzip": 351194,
+        "brotli": 278307
       }
     },
     {
       "path": "dist/index.mjs.map",
       "sizes": {
-        "raw": 2781081,
-        "gzip": 609894,
-        "brotli": 486371
+        "raw": 2782255,
+        "gzip": 610181,
+        "brotli": 486914
       }
     }
   ]

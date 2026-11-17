@@ -5,9 +5,9 @@
   "publish_branch": "gh-build-size-assets",
   "event_name": "push",
   "base_label": "main",
-  "base_reference": "c00f2c345b8164628e4358b2671f5d68b8a7615e",
+  "base_reference": "e969b4b0bc1b315d7907517e9355f21f74f2fae9",
   "head_label": "main",
-  "head_reference": "e969b4b0bc1b315d7907517e9355f21f74f2fae9",
+  "head_reference": "34971303fb489b55688b9fabe151526791194396",
   "targets": [
     {
       "id": "total",
@@ -22,21 +22,21 @@
       "sizes": {
         "raw": {
           "enabled": true,
-          "current": 4349543,
+          "current": 4351214,
           "base": 4349543,
-          "delta": 0
+          "delta": 1671
         },
         "gzip": {
           "enabled": true,
-          "current": 960943,
+          "current": 961375,
           "base": 960943,
-          "delta": 0
+          "delta": 432
         },
         "brotli": {
           "enabled": true,
-          "current": 764507,
+          "current": 765221,
           "base": 764507,
-          "delta": 0
+          "delta": 714
         }
       },
       "violations": [],
@@ -55,24 +55,31 @@
       "sizes": {
         "raw": {
           "enabled": true,
-          "current": 1568462,
+          "current": 1568959,
           "base": 1568462,
-          "delta": 0
+          "delta": 497
         },
         "gzip": {
           "enabled": true,
-          "current": 351049,
+          "current": 351194,
           "base": 351049,
-          "delta": 0
+          "delta": 145
         },
         "brotli": {
           "enabled": true,
-          "current": 278136,
+          "current": 278307,
           "base": 278136,
-          "delta": 0
+          "delta": 171
         }
       },
-      "violations": [],
+      "violations": [
+        {
+          "compression": "gzip",
+          "kind": "no_increase",
+          "message": "351194 B increased from 351049 B",
+          "fail": false
+        }
+      ],
       "badge_path": ".gh-build-size/badges/runtime.svg",
       "target_path": ".gh-build-size/targets/runtime.json"
     },
@@ -88,21 +95,21 @@
       "sizes": {
         "raw": {
           "enabled": true,
-          "current": 2781081,
+          "current": 2782255,
           "base": 2781081,
-          "delta": 0
+          "delta": 1174
         },
         "gzip": {
           "enabled": true,
-          "current": 609894,
+          "current": 610181,
           "base": 609894,
-          "delta": 0
+          "delta": 287
         },
         "brotli": {
           "enabled": true,
-          "current": 486371,
+          "current": 486914,
           "base": 486371,
-          "delta": 0
+          "delta": 543
         }
       },
       "violations": [],
